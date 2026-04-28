@@ -497,8 +497,8 @@ Etat actuel :
 ✅ Phase 0  Cadrage du socle
 ✅ Phase 1  Manifeste et validation
 ✅ Phase 2  Inspection lecture seule
-🟡 Phase 3  Planification
-⬜ Phase 4  Actions verifiables
+✅ Phase 3  Planification
+✅ Phase 4  Actions verifiables
 ⬜ Phase 5  Runner et journal
 ⬜ Phase 6  k3s present
 ⬜ Phase 7  k3s absent
@@ -596,48 +596,51 @@ Ameliorations futures :
 
 ### Phase 3 - Planification
 
-Statut : 🟡 `partial`
+Statut : ✅ `done`
 
 Objectif : produire un plan d'actions sans appliquer.
 
 Actions :
 
-- 🟡 definir les classes `ObservedState`, `Plan` et `ActionSpec`
-- 🟡 implementer le diff `desired + observed -> plan`
+- ✅ definir les classes `ObservedState`, `Plan` et `ActionSpec`
+- ✅ implementer le diff `desired + observed -> plan`
 - ✅ ajouter la commande `k3sctl plan <manifest>`
 - ✅ afficher le plan avec `rich`
 
 Definition of done :
 
 - ✅ une machine sans k3s produit un plan d'installation avec etat observe
-- 🟡 une machine conforme produit un plan vide ou des no-op masques
-- ⬜ une machine avec derive de version produit une action d'upgrade ou un avertissement
+- ✅ une machine conforme produit un plan reduit aux actions necessaires
+- ✅ une machine avec derive de version produit une action d'upgrade
 
-Reste a faire :
+Livrables :
 
-- ✅ introduire `ObservedState`
-- ✅ brancher `plan` sur l'inspection reelle ou un fake d'etat observe
-- 🟡 distinguer actions reelles et no-op
-- ⬜ tester les derives de version, config et service
+- `packages/k3splan/src/k3splan/planner.py`
+- `packages/k3splan/src/k3splan/observed.py`
 
 ### Phase 4 - Actions verifiables minimales
 
-Statut : ⬜ `todo`
+Statut : ✅ `done`
 
 Objectif : executer des actions simples et les verifier.
 
 Actions :
 
-- ⬜ implementer `EnsurePackagePresent`
-- ⬜ implementer `WriteRemoteFile` avec backup
-- ⬜ implementer `SetSysctlValue`
-- ⬜ definir `precheck`, `snapshot`, `apply`, `verify`, `rollback`
+- ✅ implementer `EnsurePackagePresent`
+- ✅ implementer `WriteRemoteFile` avec backup
+- ✅ implementer `SetSysctlValue`
+- ✅ definir `precheck`, `snapshot`, `apply`, `verify`, `rollback`
 
 Definition of done :
 
-- ⬜ chaque action peut etre testee avec un executor fake
-- ⬜ chaque action expose son mode de rollback
-- ⬜ une verification echouee est detectee
+- ✅ chaque action peut etre testee avec un executor fake
+- ✅ chaque action expose son mode de rollback
+- ✅ une verification echouee est detectee
+
+Livrables :
+
+- `packages/k3splan/src/k3splan/actions.py`
+- `packages/k3sremote/src/k3sremote/actions.py`
 
 ### Phase 5 - Runner transactionnel et journal
 
