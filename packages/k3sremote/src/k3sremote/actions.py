@@ -308,3 +308,53 @@ class FetchKubeconfig(Action):
             self._local_path.unlink(missing_ok=True)
         else:
             self._local_path.write_text(str(snapshot), encoding="utf-8")
+
+
+class UninstallK3s(Action):
+    def __init__(
+        self,
+        executor: RemoteExecutor,
+        remove_data: bool = False,
+        remove_kubeconfig: bool = False,
+        local_kubeconfig: Path | None = None,
+    ) -> None:
+        self._executor = executor
+        self._remove_data = remove_data
+        self._remove_kubeconfig = remove_kubeconfig
+        self._local_kubeconfig = local_kubeconfig
+
+    @property
+    def id(self) -> str:
+        return "k3s.uninstall"
+
+    @property
+    def description(self) -> str:
+        return "Uninstall k3s"
+
+    @property
+    def risk(self) -> RiskLevel:
+        return "high" if self._remove_data else "medium"
+
+    @property
+    def rollback_mode(self) -> RollbackMode:
+        return "none"
+
+    def snapshot(self) -> str | None:
+        result = self._executor.run("k3s --version | head -n 1")
+        return result.stdout if result.ok else None
+
+    def apply(self) -> None:
+        if self._remove_data:
+            self._executor.run("/usr/local/bin/k3s-uninstall.sh")
+        else:
+            self._executor.run("systemctl stop k3s 2>/dev/null || true")
+            self._executor.run("systemctl disable k3s 2>/dev/null || true")
+            self._executor.run("rm -f /usr/local/bin/k3s")
+            self._executor.run("rm -f /etc/systemd/system/k3s.service")
+            self._executor.run("systemctl daemon-reload")
+
+        if self._remove_kubeconfig and self._local_kubeconfig is not None:
+            self._local_kubeconfig.unlink(missing_ok=True)
+
+    def verify(self) -> bool:
+        return not self._executor.run("command -v k3s").ok

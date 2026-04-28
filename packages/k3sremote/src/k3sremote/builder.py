@@ -13,6 +13,7 @@ from k3sremote.actions import (
     SetSysctlValue,
     SystemdServiceEnable,
     SystemdServiceStart,
+    UninstallK3s,
     WaitK3sNodeReady,
     WriteRemoteFile,
 )
@@ -72,6 +73,15 @@ def _build_action(action_id: str, desired: DesiredState, executor: RemoteExecuto
 
     if action_id == "k3s.kubeconfig.fetch":
         return FetchKubeconfig(executor, Path("k3s.yaml"))
+
+    if action_id == "k3s.uninstall":
+        uninstall = desired.spec.k3s.uninstall
+        return UninstallK3s(
+            executor,
+            remove_data=uninstall.removeData,
+            remove_kubeconfig=uninstall.removeKubeconfig,
+            local_kubeconfig=Path("k3s.yaml") if uninstall.removeKubeconfig else None,
+        )
 
     return None
 

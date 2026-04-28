@@ -501,7 +501,7 @@ Etat actuel :
 ✅ Phase 4  Actions verifiables
 ✅ Phase 5  Runner et journal
 ✅ Phase 6  k3s present
-⬜ Phase 7  k3s absent
+✅ Phase 7  k3s absent
 ⬜ Phase 8  Health et drift
 🟡 Phase 9  Durcissement
 ```
@@ -697,22 +697,27 @@ Livrables :
 
 ### Phase 7 - k3s absent
 
-Statut : ⬜ `todo`
+Statut : ✅ `done`
 
 Objectif : desinstaller k3s proprement.
 
 Actions :
 
-- ⬜ implementer `UninstallK3s`
-- ⬜ gerer `removeData`
-- ⬜ gerer `removeKubeconfig`
-- ⬜ verifier absence service, binaire et configuration selon options
+- ✅ implementer `UninstallK3s`
+- ✅ gerer `removeData` (script complet ou suppression selective)
+- ✅ gerer `removeKubeconfig` (suppression du kubeconfig local)
+- ✅ verifier absence du binaire k3s apres desinstallation
 
 Definition of done :
 
-- ⬜ `state: absent` produit un plan de desinstallation
-- ⬜ la desinstallation est bloquee ou confirmee si elle est destructive
-- ⬜ la verification confirme l'absence attendue
+- ✅ `state: absent` produit un plan de desinstallation
+- ⬜ la desinstallation est bloquee ou confirmee si elle est destructive (Phase 9)
+- ✅ la verification confirme l'absence attendue
+
+Livrables :
+
+- `packages/k3sremote/src/k3sremote/actions.py` (UninstallK3s)
+- `packages/k3sremote/src/k3sremote/builder.py` (k3s.uninstall cable)
 
 ### Phase 8 - Health et drift
 

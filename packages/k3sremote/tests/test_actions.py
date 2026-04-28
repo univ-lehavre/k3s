@@ -8,6 +8,7 @@ from k3sremote.actions import (
     SetSysctlValue,
     SystemdServiceEnable,
     SystemdServiceStart,
+    UninstallK3s,
     WaitK3sNodeReady,
     WriteRemoteFile,
 )
@@ -302,3 +303,49 @@ def test_fetch_kubeconfig_rollback_restores_content(tmp_path: Path) -> None:
     kubeconfig = tmp_path / "k3s.yaml"
     FetchKubeconfig(FakeExecutor(), kubeconfig).rollback("old-content")
     assert kubeconfig.read_text(encoding="utf-8") == "old-content"
+
+
+# --- UninstallK3s ---
+
+
+def test_uninstall_k3s_snapshot_returns_version() -> None:
+    executor = FakeExecutor({"k3s --version | head -n 1": ok("", "k3s version v1.35.3+k3s1")})
+    assert UninstallK3s(executor).snapshot() == "k3s version v1.35.3+k3s1"
+
+
+def test_uninstall_k3s_apply_runs_uninstall_script_when_remove_data() -> None:
+    executor = FakeExecutor()
+    UninstallK3s(executor, remove_data=True).apply()
+    assert any("k3s-uninstall.sh" in cmd for cmd in executor.calls)
+
+
+def test_uninstall_k3s_apply_keeps_data_directory() -> None:
+    executor = FakeExecutor()
+    UninstallK3s(executor, remove_data=False).apply()
+    assert not any("k3s-uninstall.sh" in cmd for cmd in executor.calls)
+    assert any("rm -f /usr/local/bin/k3s" in cmd for cmd in executor.calls)
+
+
+def test_uninstall_k3s_apply_removes_kubeconfig(tmp_path: Path) -> None:
+    kubeconfig = tmp_path / "k3s.yaml"
+    kubeconfig.write_text("x", encoding="utf-8")
+    UninstallK3s(FakeExecutor(), remove_kubeconfig=True, local_kubeconfig=kubeconfig).apply()
+    assert not kubeconfig.exists()
+
+
+def test_uninstall_k3s_verify_ok_when_absent() -> None:
+    executor = FakeExecutor({"command -v k3s": fail("")})
+    assert UninstallK3s(executor).verify() is True
+
+
+def test_uninstall_k3s_verify_fails_when_still_present() -> None:
+    executor = FakeExecutor({"command -v k3s": ok("", "/usr/local/bin/k3s")})
+    assert UninstallK3s(executor).verify() is False
+
+
+def test_uninstall_k3s_risk_high_when_remove_data() -> None:
+    assert UninstallK3s(FakeExecutor(), remove_data=True).risk == "high"
+
+
+def test_uninstall_k3s_risk_medium_when_keep_data() -> None:
+    assert UninstallK3s(FakeExecutor(), remove_data=False).risk == "medium"
