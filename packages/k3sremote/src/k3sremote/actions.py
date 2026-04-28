@@ -77,7 +77,7 @@ class WriteRemoteFile(Action):
 
     def verify(self) -> bool:
         result = self._executor.run(f"cat {shlex.quote(self._path)} 2>/dev/null")
-        return result.ok and result.stdout == self._content
+        return result.ok and result.stdout == self._content.strip()
 
     def rollback(self, snapshot: object) -> None:
         if snapshot is None:
