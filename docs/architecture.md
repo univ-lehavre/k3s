@@ -499,7 +499,7 @@ Etat actuel :
 ✅ Phase 2  Inspection lecture seule
 ✅ Phase 3  Planification
 ✅ Phase 4  Actions verifiables
-⬜ Phase 5  Runner et journal
+✅ Phase 5  Runner et journal
 ⬜ Phase 6  k3s present
 ⬜ Phase 7  k3s absent
 ⬜ Phase 8  Health et drift
@@ -644,24 +644,30 @@ Livrables :
 
 ### Phase 5 - Runner transactionnel et journal
 
-Statut : ⬜ `todo`
+Statut : ✅ `done`
 
 Objectif : executer un plan avec journalisation et rollback.
 
 Actions :
 
-- ⬜ implementer le `Runner`
-- ⬜ ecrire un journal local par `run_id`
-- ⬜ enregistrer snapshots, statuts et erreurs
-- ⬜ executer le rollback en ordre inverse
-- ⬜ ajouter `k3sctl apply <manifest>`
+- ✅ implementer le `Runner`
+- ✅ ecrire un journal local par `run_id`
+- ✅ enregistrer snapshots, statuts et erreurs
+- ✅ executer le rollback en ordre inverse
+- ✅ ajouter `k3sctl apply <manifest>`
 
 Definition of done :
 
-- ⬜ une action echouee stoppe l'execution
-- ⬜ les actions deja appliquees sont rollbackees si possible
-- ⬜ `k3sctl journal` liste les executions
+- ✅ une action echouee stoppe l'execution
+- ✅ les actions deja appliquees sont rollbackees si possible
+- ✅ `k3sctl journal list` liste les executions
 - ⬜ `k3sctl rollback --run-id <run-id>` fonctionne pour les actions rollbackables
+
+Livrables :
+
+- `packages/k3splan/src/k3splan/runner.py`
+- `packages/k3splan/src/k3splan/journal.py`
+- `packages/k3sremote/src/k3sremote/builder.py`
 
 ### Phase 6 - k3s present
 

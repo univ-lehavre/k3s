@@ -3,16 +3,21 @@ from typing import Annotated, Any
 
 import typer
 from k3splan import Connection, load_inventory, load_manifest, resolve_connection
+from k3splan.journal import Journal
 from k3splan.observed import ObservedState
 from k3splan.planner import build_plan
+from k3splan.runner import Runner
 from k3sremote import SshExecutor, inspect_machine
+from k3sremote.builder import build_actions
 from rich.console import Console
 from rich.table import Table
 from ruamel.yaml import YAML
 
 app = typer.Typer(help="Declarative k3s machine reconciler.")
 context_app = typer.Typer(help="Manage local k3sctl context.")
+journal_app = typer.Typer(help="Manage execution journal.")
 app.add_typer(context_app, name="context")
+app.add_typer(journal_app, name="journal")
 console = Console()
 DEFAULT_CONTEXT_PATH = Path(".k3sctl.yaml")
 
@@ -184,6 +189,44 @@ def plan(manifest: ManifestArgument = None, inventory: Path | None = None) -> No
 
 
 @app.command()
+def apply(manifest: ManifestArgument = None, inventory: Path | None = None) -> None:
+    """Apply the desired state to the target machine."""
+    manifest, inventory = resolve_paths(manifest, inventory)
+    desired = load_manifest(manifest)
+    target, connection = resolve_manifest_connection(manifest, inventory)
+    observed = inspect_machine(
+        target,
+        SshExecutor(connection),
+        package_names=desired.spec.system.packages.present,
+        sysctl_keys=list(desired.spec.system.sysctl),
+    )
+
+    generated_plan = build_plan(desired, observed)
+
+    if generated_plan.empty:
+        console.print("[green]OK[/] nothing to apply")
+        return
+
+    executor = SshExecutor(connection)
+    actions, skipped = build_actions(desired, generated_plan, executor)
+
+    if skipped:
+        for action_id in skipped:
+            console.print(f"[yellow]skip[/] {action_id} (not yet implemented)")
+
+    journal_path = Path(desired.spec.execution.journal.path)
+    journal = Journal(journal_path, keep=desired.spec.execution.journal.keep)
+    runner = Runner(journal)
+    result = runner.run(target, actions)
+
+    if result.success:
+        console.print(f"[green]OK[/] {result.applied} action(s) applied")
+    else:
+        console.print(f"[red]FAILED[/] {result.failed_action}: {result.error}")
+        raise typer.Exit(1)
+
+
+@app.command()
 def inspect(manifest: ManifestArgument = None, inventory: Path | None = None) -> None:
     """Inspect the target machine without modifying it."""
     manifest, inventory = resolve_paths(manifest, inventory)
@@ -202,6 +245,34 @@ def inspect(manifest: ManifestArgument = None, inventory: Path | None = None) ->
 
     for error in observed.errors:
         console.print(f"[red]error[/] {error}")
+
+
+@journal_app.command("list")
+def journal_list(path: Path = Path(".k3sctl/runs")) -> None:
+    """List past executions."""
+    journal = Journal(path)
+    runs = journal.list_runs()
+
+    if not runs:
+        console.print("[yellow]No runs recorded[/]")
+        return
+
+    table = Table(title="Journal")
+    table.add_column("Run ID")
+    table.add_column("Target")
+    table.add_column("Started")
+    table.add_column("Result")
+
+    for run in runs:
+        if run.success is True:
+            result_str = "[green]success[/]"
+        elif run.success is False:
+            result_str = "[red]failed[/]"
+        else:
+            result_str = "unknown"
+        table.add_row(run.run_id, run.target, run.started_at, result_str)
+
+    console.print(table)
 
 
 def build_inspect_tables(observed: ObservedState) -> list[Table]:

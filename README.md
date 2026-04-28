@@ -19,6 +19,8 @@ uv run k3sctl validate examples/single-server.yaml
 uv run k3sctl validate examples/single-server.yaml --inventory examples/inventory.example.yaml
 uv run k3sctl plan examples/single-server.yaml
 uv run k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
+uv run k3sctl apply examples/single-server.yaml --inventory inventory.local.yaml
+uv run k3sctl journal list
 ```
 
 Configurer un contexte local :
