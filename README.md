@@ -21,6 +21,24 @@ uv run k3sctl plan examples/single-server.yaml
 uv run k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
+Configurer un contexte local :
+
+```bash
+uv run k3sctl context set dev examples/single-server.yaml inventory.local.yaml
+uv run k3sctl context list
+uv run k3sctl context show
+uv run k3sctl inspect
+uv run k3sctl plan
+```
+
+Travailler avec plusieurs contextes :
+
+```bash
+uv run k3sctl context set prod examples/prod.yaml inventory.prod.yaml
+uv run k3sctl context use prod
+uv run k3sctl inspect
+```
+
 Les manifestes publics utilisent `spec.connectionRef`. Les vraies informations
 de connexion sont a placer dans `inventory.local.yaml`, ignore par Git.
 

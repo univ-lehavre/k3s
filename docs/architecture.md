@@ -103,6 +103,15 @@ Le coeur doit rester testable sans machine distante.
 
 Le binaire s'appelle `k3sctl`.
 
+Gestion des contextes :
+
+```bash
+k3sctl context set <name> <manifest> <inventory>
+k3sctl context use <name>
+k3sctl context list
+k3sctl context show
+```
+
 Commandes initiales :
 
 ```bash
@@ -568,6 +577,7 @@ Actions :
 - ✅ ajouter un adaptateur SSH
 - ✅ collecter OS, distribution, version, architecture, systemd, k3s, disque, memoire
 - ✅ collecter l'etat APT : disponibilite, fraicheur des listes et paquets upgradables
+- ✅ collecter les paquets et sysctl declares dans le manifeste
 - ✅ ajouter la commande `k3sctl inspect <manifest>`
 
 Definition of done :
@@ -600,14 +610,14 @@ Actions :
 Definition of done :
 
 - ✅ une machine sans k3s produit un plan d'installation avec etat observe
-- ⬜ une machine conforme produit un plan vide ou des no-op masques
+- 🟡 une machine conforme produit un plan vide ou des no-op masques
 - ⬜ une machine avec derive de version produit une action d'upgrade ou un avertissement
 
 Reste a faire :
 
 - ✅ introduire `ObservedState`
 - ✅ brancher `plan` sur l'inspection reelle ou un fake d'etat observe
-- ⬜ distinguer actions reelles et no-op
+- 🟡 distinguer actions reelles et no-op
 - ⬜ tester les derives de version, config et service
 
 ### Phase 4 - Actions verifiables minimales

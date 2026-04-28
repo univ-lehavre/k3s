@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Annotated
 
 import typer
 from k3splan import Connection, load_inventory, load_manifest, resolve_connection
@@ -7,9 +8,55 @@ from k3splan.planner import build_plan
 from k3sremote import SshExecutor, inspect_machine
 from rich.console import Console
 from rich.table import Table
+from ruamel.yaml import YAML
 
 app = typer.Typer(help="Declarative k3s machine reconciler.")
+context_app = typer.Typer(help="Manage local k3sctl context.")
+app.add_typer(context_app, name="context")
 console = Console()
+DEFAULT_CONTEXT_PATH = Path(".k3sctl.yaml")
+
+
+def _load_raw(path: Path = DEFAULT_CONTEXT_PATH) -> dict:
+    if not path.exists():
+        return {}
+    yaml = YAML(typ="safe")
+    return yaml.load(path.read_text(encoding="utf-8")) or {}
+
+
+def _write_raw(data: dict, path: Path = DEFAULT_CONTEXT_PATH) -> None:
+    yaml = YAML()
+    yaml.default_flow_style = False
+    with path.open("w", encoding="utf-8") as handle:
+        yaml.dump(data, handle)
+
+
+def load_active_context(path: Path = DEFAULT_CONTEXT_PATH) -> dict[str, Path]:
+    raw = _load_raw(path)
+    contexts = raw.get("contexts", {})
+    current = raw.get("current-context")
+
+    if not current or current not in contexts:
+        return {}
+
+    entry = contexts[current]
+    result: dict[str, Path] = {}
+    if "manifest" in entry:
+        result["manifest"] = Path(str(entry["manifest"]))
+    if "inventory" in entry:
+        result["inventory"] = Path(str(entry["inventory"]))
+    return result
+
+
+def resolve_paths(manifest: Path | None, inventory: Path | None) -> tuple[Path, Path | None]:
+    context = load_active_context()
+    resolved_manifest = manifest or context.get("manifest")
+    resolved_inventory = inventory or context.get("inventory")
+
+    if resolved_manifest is None:
+        raise typer.BadParameter("manifest is required or must be configured in .k3sctl.yaml")
+
+    return resolved_manifest, resolved_inventory
 
 
 def resolve_manifest_connection(manifest: Path, inventory: Path | None) -> tuple[str, Connection]:
@@ -21,9 +68,81 @@ def resolve_manifest_connection(manifest: Path, inventory: Path | None) -> tuple
         raise typer.BadParameter(str(exc)) from exc
 
 
+@context_app.command("set")
+def set_context(name: str, manifest: Path, inventory: Path) -> None:
+    """Create or update a named context."""
+    raw = _load_raw()
+    raw.setdefault("contexts", {})[name] = {
+        "manifest": str(manifest),
+        "inventory": str(inventory),
+    }
+    if "current-context" not in raw:
+        raw["current-context"] = name
+    _write_raw(raw)
+    console.print(f"[green]OK[/] context [bold]{name}[/] saved to {DEFAULT_CONTEXT_PATH}")
+
+
+@context_app.command("use")
+def use_context(name: str) -> None:
+    """Switch the active context."""
+    raw = _load_raw()
+    contexts = raw.get("contexts", {})
+    if name not in contexts:
+        raise typer.BadParameter(f"context '{name}' not found")
+    raw["current-context"] = name
+    _write_raw(raw)
+    console.print(f"[green]OK[/] switched to context [bold]{name}[/]")
+
+
+@context_app.command("list")
+def list_contexts() -> None:
+    """List all contexts."""
+    raw = _load_raw()
+    contexts = raw.get("contexts", {})
+    current = raw.get("current-context", "")
+
+    if not contexts:
+        console.print("[yellow]No contexts configured[/]")
+        return
+
+    table = Table(title="Contexts")
+    table.add_column("")
+    table.add_column("Name")
+    table.add_column("Manifest")
+    table.add_column("Inventory")
+    for name, entry in contexts.items():
+        marker = "[green]*[/]" if name == current else ""
+        table.add_row(marker, name, entry.get("manifest", ""), entry.get("inventory", ""))
+    console.print(table)
+
+
+@context_app.command("show")
+def show_context() -> None:
+    """Show the active context."""
+    raw = _load_raw()
+    current = raw.get("current-context")
+    contexts = raw.get("contexts", {})
+
+    if not current or current not in contexts:
+        console.print("[yellow]No active context[/]")
+        return
+
+    entry = contexts[current]
+    table = Table(title=f"Context: {current}")
+    table.add_column("Key")
+    table.add_column("Path")
+    for key, value in entry.items():
+        table.add_row(key, str(value))
+    console.print(table)
+
+
+ManifestArgument = Annotated[Path | None, typer.Argument()]
+
+
 @app.command()
-def validate(manifest: Path, inventory: Path | None = None) -> None:
+def validate(manifest: ManifestArgument = None, inventory: Path | None = None) -> None:
     """Validate a machine manifest."""
+    manifest, inventory = resolve_paths(manifest, inventory)
     desired = load_manifest(manifest)
     if inventory is not None:
         loaded_inventory = load_inventory(inventory)
@@ -36,13 +155,19 @@ def validate(manifest: Path, inventory: Path | None = None) -> None:
 
 
 @app.command()
-def plan(manifest: Path, inventory: Path | None = None) -> None:
+def plan(manifest: ManifestArgument = None, inventory: Path | None = None) -> None:
     """Show the actions required to reach the desired state."""
+    manifest, inventory = resolve_paths(manifest, inventory)
     desired = load_manifest(manifest)
     observed = None
     if inventory is not None:
         target, connection = resolve_manifest_connection(manifest, inventory)
-        observed = inspect_machine(target, SshExecutor(connection))
+        observed = inspect_machine(
+            target,
+            SshExecutor(connection),
+            package_names=desired.spec.system.packages.present,
+            sysctl_keys=list(desired.spec.system.sysctl),
+        )
 
     generated_plan = build_plan(desired, observed)
 
@@ -59,10 +184,17 @@ def plan(manifest: Path, inventory: Path | None = None) -> None:
 
 
 @app.command()
-def inspect(manifest: Path, inventory: Path | None = None) -> None:
+def inspect(manifest: ManifestArgument = None, inventory: Path | None = None) -> None:
     """Inspect the target machine without modifying it."""
+    manifest, inventory = resolve_paths(manifest, inventory)
     target, connection = resolve_manifest_connection(manifest, inventory)
-    observed = inspect_machine(target, SshExecutor(connection))
+    desired = load_manifest(manifest)
+    observed = inspect_machine(
+        target,
+        SshExecutor(connection),
+        package_names=desired.spec.system.packages.present,
+        sysctl_keys=list(desired.spec.system.sysctl),
+    )
 
     console.print(f"[bold]Inspect: {observed.target}[/]")
     for table in build_inspect_tables(observed):

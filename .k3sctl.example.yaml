@@ -1,0 +1,8 @@
+current-context: dev
+contexts:
+  dev:
+    manifest: examples/single-server.yaml
+    inventory: inventory.local.yaml
+  prod:
+    manifest: examples/prod.yaml
+    inventory: inventory.prod.yaml
