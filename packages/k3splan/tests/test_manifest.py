@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from k3splan import load_inventory, load_manifest, resolve_connection
-from k3splan.planner import build_initial_plan
+from k3splan import K3sState, ObservedState, load_inventory, load_manifest, resolve_connection
+from k3splan.planner import build_initial_plan, build_plan
 from pydantic import ValidationError
 
 
@@ -49,3 +49,31 @@ def test_build_initial_plan() -> None:
         "systemd.k3s.start",
         "k3s.node.ready",
     ]
+
+
+def test_build_observed_plan_skips_install_when_k3s_is_present() -> None:
+    desired = load_manifest(Path("examples/single-server.yaml"))
+    plan = build_plan(
+        desired,
+        ObservedState(
+            target="prod-1",
+            sshAvailable=True,
+            k3s=K3sState(
+                installed=True,
+                version="k3s version v1.30.5+k3s1",
+                serviceActive=True,
+                serviceEnabled=True,
+            ),
+        ),
+    )
+
+    assert "k3s.install" not in [action.id for action in plan.actions]
+    assert "systemd.k3s.start" not in [action.id for action in plan.actions]
+    assert "systemd.k3s.enable" not in [action.id for action in plan.actions]
+
+
+def test_build_observed_plan_blocks_when_ssh_is_unavailable() -> None:
+    desired = load_manifest(Path("examples/single-server.yaml"))
+    plan = build_plan(desired, ObservedState(target="prod-1", sshAvailable=False))
+
+    assert [action.id for action in plan.actions] == ["ssh.unavailable"]

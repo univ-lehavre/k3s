@@ -593,20 +593,20 @@ Objectif : produire un plan d'actions sans appliquer.
 Actions :
 
 - 🟡 definir les classes `ObservedState`, `Plan` et `ActionSpec`
-- ⬜ implementer le diff `desired + observed -> plan`
+- 🟡 implementer le diff `desired + observed -> plan`
 - ✅ ajouter la commande `k3sctl plan <manifest>`
 - ✅ afficher le plan avec `rich`
 
 Definition of done :
 
-- 🟡 une machine sans k3s produit un plan d'installation, simule sans etat observe
+- ✅ une machine sans k3s produit un plan d'installation avec etat observe
 - ⬜ une machine conforme produit un plan vide ou des no-op masques
 - ⬜ une machine avec derive de version produit une action d'upgrade ou un avertissement
 
 Reste a faire :
 
-- ⬜ introduire `ObservedState`
-- ⬜ brancher `plan` sur l'inspection reelle ou un fake d'etat observe
+- ✅ introduire `ObservedState`
+- ✅ brancher `plan` sur l'inspection reelle ou un fake d'etat observe
 - ⬜ distinguer actions reelles et no-op
 - ⬜ tester les derives de version, config et service
 

@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 from k3splan import Connection, load_inventory, load_manifest, resolve_connection
 from k3splan.observed import ObservedState
-from k3splan.planner import build_initial_plan
+from k3splan.planner import build_plan
 from k3sremote import SshExecutor, inspect_machine
 from rich.console import Console
 from rich.table import Table
@@ -36,10 +36,15 @@ def validate(manifest: Path, inventory: Path | None = None) -> None:
 
 
 @app.command()
-def plan(manifest: Path) -> None:
+def plan(manifest: Path, inventory: Path | None = None) -> None:
     """Show the actions required to reach the desired state."""
     desired = load_manifest(manifest)
-    generated_plan = build_initial_plan(desired)
+    observed = None
+    if inventory is not None:
+        target, connection = resolve_manifest_connection(manifest, inventory)
+        observed = inspect_machine(target, SshExecutor(connection))
+
+    generated_plan = build_plan(desired, observed)
 
     table = Table(title=f"Plan: {generated_plan.target}")
     table.add_column("#", justify="right")
