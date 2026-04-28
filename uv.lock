@@ -600,10 +600,14 @@ version = "0.1.0"
 source = { editable = "packages/k3sremote" }
 dependencies = [
     { name = "fabric" },
+    { name = "k3splan" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "fabric", specifier = ">=3.2.0" }]
+requires-dist = [
+    { name = "fabric", specifier = ">=3.2.0" },
+    { name = "k3splan", editable = "packages/k3splan" },
+]
 
 [[package]]
 name = "librt"

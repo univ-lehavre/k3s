@@ -18,6 +18,7 @@ uv run k3sctl --help
 uv run k3sctl validate examples/single-server.yaml
 uv run k3sctl validate examples/single-server.yaml --inventory examples/inventory.example.yaml
 uv run k3sctl plan examples/single-server.yaml
+uv run k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Les manifestes publics utilisent `spec.connectionRef`. Les vraies informations

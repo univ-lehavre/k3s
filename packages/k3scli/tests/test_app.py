@@ -31,3 +31,10 @@ def test_plan_command() -> None:
     assert result.exit_code == 0
     assert "Plan: prod-1" in result.stdout
     assert "Install k3s" in result.stdout
+
+
+def test_inspect_requires_inventory_for_connection_ref() -> None:
+    result = CliRunner().invoke(app, ["inspect", "examples/single-server.yaml"])
+
+    assert result.exit_code != 0
+    assert "manifest uses connectionRef but no inventory was provided" in result.output

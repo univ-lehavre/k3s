@@ -487,7 +487,7 @@ Etat actuel :
 ```text
 ✅ Phase 0  Cadrage du socle
 ✅ Phase 1  Manifeste et validation
-⬜ Phase 2  Inspection lecture seule
+✅ Phase 2  Inspection lecture seule
 🟡 Phase 3  Planification
 ⬜ Phase 4  Actions verifiables
 ⬜ Phase 5  Runner et journal
@@ -558,22 +558,26 @@ Livrables :
 
 ### Phase 2 - Inspection lecture seule
 
-Statut : ⬜ `todo`
+Statut : ✅ `done`
 
 Objectif : observer une machine distante sans modifier son etat.
 
 Actions :
 
-- ⬜ implementer une interface `RemoteExecutor`
-- ⬜ ajouter un adaptateur SSH
-- ⬜ collecter OS, architecture, systemd, k3s, disque, memoire
-- ⬜ ajouter la commande `k3sctl inspect <manifest>`
+- ✅ implementer une interface `RemoteExecutor`
+- ✅ ajouter un adaptateur SSH
+- ✅ collecter OS, architecture, systemd, k3s, disque, memoire
+- ✅ ajouter la commande `k3sctl inspect <manifest>`
 
 Definition of done :
 
-- ⬜ l'inspection fonctionne sur une machine accessible en SSH
-- ⬜ l'etat observe est serialisable en JSON
-- ⬜ les tests unitaires utilisent un faux executor
+- ✅ l'inspection fonctionne sur une machine accessible en SSH
+- ✅ l'etat observe est serialisable en JSON
+- ✅ les tests unitaires utilisent un faux executor
+
+Ameliorations futures :
+
+- ⬜ ajouter une sortie JSON pour automatisation
 
 ### Phase 3 - Planification
 
