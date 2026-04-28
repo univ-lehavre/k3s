@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from k3splan import Connection, load_inventory, load_manifest, resolve_connection
@@ -17,14 +17,14 @@ console = Console()
 DEFAULT_CONTEXT_PATH = Path(".k3sctl.yaml")
 
 
-def _load_raw(path: Path = DEFAULT_CONTEXT_PATH) -> dict:
+def _load_raw(path: Path = DEFAULT_CONTEXT_PATH) -> dict[str, Any]:
     if not path.exists():
         return {}
     yaml = YAML(typ="safe")
     return yaml.load(path.read_text(encoding="utf-8")) or {}
 
 
-def _write_raw(data: dict, path: Path = DEFAULT_CONTEXT_PATH) -> None:
+def _write_raw(data: dict[str, Any], path: Path = DEFAULT_CONTEXT_PATH) -> None:
     yaml = YAML()
     yaml.default_flow_style = False
     with path.open("w", encoding="utf-8") as handle:

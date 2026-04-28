@@ -109,6 +109,55 @@ def test_build_observed_plan_skips_matching_packages_and_sysctl() -> None:
     assert "sysctl.net.bridge.bridge-nf-call-iptables" not in action_ids
 
 
+def test_build_observed_plan_upgrades_k3s_on_version_drift() -> None:
+    desired = load_manifest(Path("examples/single-server.yaml"))
+    plan = build_plan(
+        desired,
+        ObservedState(
+            target="prod-1",
+            sshAvailable=True,
+            k3s=K3sState(
+                installed=True,
+                version="k3s version v1.29.0+k3s1",
+                serviceActive=True,
+                serviceEnabled=True,
+            ),
+        ),
+    )
+
+    action_ids = [action.id for action in plan.actions]
+    assert "k3s.upgrade" in action_ids
+    assert "k3s.install" not in action_ids
+
+
+def test_build_observed_plan_enables_service_when_disabled() -> None:
+    desired = load_manifest(Path("examples/single-server.yaml"))
+    plan = build_plan(
+        desired,
+        ObservedState(
+            target="prod-1",
+            sshAvailable=True,
+            k3s=K3sState(installed=True, version="k3s version v1.30.5+k3s1", serviceEnabled=False),
+        ),
+    )
+
+    assert "systemd.k3s.enable" in [action.id for action in plan.actions]
+
+
+def test_build_observed_plan_starts_service_when_stopped() -> None:
+    desired = load_manifest(Path("examples/single-server.yaml"))
+    plan = build_plan(
+        desired,
+        ObservedState(
+            target="prod-1",
+            sshAvailable=True,
+            k3s=K3sState(installed=True, version="k3s version v1.30.5+k3s1", serviceActive=False),
+        ),
+    )
+
+    assert "systemd.k3s.start" in [action.id for action in plan.actions]
+
+
 def test_build_observed_plan_blocks_when_ssh_is_unavailable() -> None:
     desired = load_manifest(Path("examples/single-server.yaml"))
     plan = build_plan(desired, ObservedState(target="prod-1", sshAvailable=False))
