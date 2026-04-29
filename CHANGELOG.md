@@ -5,6 +5,8 @@ Tous les changements notables de ce projet seront documentes ici.
 Le format s'appuie sur les Conventional Commits et le changelog est genere par
 Commitizen lors des bumps de version.
 
+## v0.3.1 (2026-04-29)
+
 ## v0.3.0 (2026-04-29)
 
 ### Feat
