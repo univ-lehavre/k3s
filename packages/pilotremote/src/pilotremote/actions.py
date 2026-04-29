@@ -33,6 +33,10 @@ class EnsurePackagePresent(Action):
 
     def apply(self) -> None:
         self._executor.run(
+            "sudo DEBIAN_FRONTEND=noninteractive apt-get update -qq",
+            stream=True,
+        )
+        self._executor.run(
             f"sudo DEBIAN_FRONTEND=noninteractive apt-get install -y {shlex.quote(self._package)}",
             stream=True,
         )
