@@ -93,12 +93,12 @@ def test_write_remote_file_apply_writes_base64() -> None:
 
 
 def test_write_remote_file_verify_matches_content() -> None:
-    executor = FakeExecutor({"cat /etc/foo.conf 2>/dev/null": ok("", "hello")})
+    executor = FakeExecutor({"sudo cat /etc/foo.conf 2>/dev/null": ok("", "hello")})
     assert WriteRemoteFile(executor, "/etc/foo.conf", "hello").verify() is True
 
 
 def test_write_remote_file_verify_fails_on_mismatch() -> None:
-    executor = FakeExecutor({"cat /etc/foo.conf 2>/dev/null": ok("", "old")})
+    executor = FakeExecutor({"sudo cat /etc/foo.conf 2>/dev/null": ok("", "old")})
     assert WriteRemoteFile(executor, "/etc/foo.conf", "new").verify() is False
 
 
@@ -280,7 +280,7 @@ def test_fetch_kubeconfig_snapshot_absent(tmp_path: Path) -> None:
 
 
 def test_fetch_kubeconfig_apply_writes_local_file(tmp_path: Path) -> None:
-    executor = FakeExecutor({"cat /etc/rancher/k3s/k3s.yaml": ok("", "kubeconfig-content")})
+    executor = FakeExecutor({"sudo cat /etc/rancher/k3s/k3s.yaml": ok("", "kubeconfig-content")})
     kubeconfig = tmp_path / "k3s.yaml"
     FetchKubeconfig(executor, kubeconfig).apply()
     assert kubeconfig.read_text(encoding="utf-8") == "kubeconfig-content"

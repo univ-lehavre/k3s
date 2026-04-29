@@ -33,7 +33,7 @@ class EnsurePackagePresent(Action):
 
     def apply(self) -> None:
         self._executor.run(
-            f"DEBIAN_FRONTEND=noninteractive apt-get install -y {shlex.quote(self._package)}",
+            f"sudo DEBIAN_FRONTEND=noninteractive apt-get install -y {shlex.quote(self._package)}",
             stream=True,
         )
 
@@ -42,9 +42,8 @@ class EnsurePackagePresent(Action):
 
     def rollback(self, snapshot: object) -> None:
         if not snapshot:
-            self._executor.run(
-                f"DEBIAN_FRONTEND=noninteractive apt-get remove -y {shlex.quote(self._package)}"
-            )
+            pkg = shlex.quote(self._package)
+            self._executor.run(f"sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y {pkg}")
 
 
 class WriteRemoteFile(Action):
@@ -71,23 +70,26 @@ class WriteRemoteFile(Action):
 
     def apply(self) -> None:
         content_b64 = base64.b64encode(self._content.encode()).decode()
+        parent = shlex.quote(str(PurePosixPath(self._path).parent))
+        dest = shlex.quote(self._path)
         self._executor.run(
-            f"mkdir -p {shlex.quote(str(PurePosixPath(self._path).parent))}"
-            f" && echo {shlex.quote(content_b64)} | base64 -d > {shlex.quote(self._path)}",
+            f"sudo mkdir -p {parent}"
+            f" && echo {shlex.quote(content_b64)} | base64 -d | sudo tee {dest} > /dev/null",
             stream=True,
         )
 
     def verify(self) -> bool:
-        result = self._executor.run(f"cat {shlex.quote(self._path)} 2>/dev/null")
+        result = self._executor.run(f"sudo cat {shlex.quote(self._path)} 2>/dev/null")
         return result.ok and result.stdout == self._content.strip()
 
     def rollback(self, snapshot: object) -> None:
         if snapshot is None:
-            self._executor.run(f"rm -f {shlex.quote(self._path)}")
+            self._executor.run(f"sudo rm -f {shlex.quote(self._path)}")
         else:
             content_b64 = base64.b64encode(str(snapshot).encode()).decode()
+            dest = shlex.quote(self._path)
             self._executor.run(
-                f"echo {shlex.quote(content_b64)} | base64 -d > {shlex.quote(self._path)}"
+                f"echo {shlex.quote(content_b64)} | base64 -d | sudo tee {dest} > /dev/null"
             )
 
 
@@ -117,14 +119,16 @@ class SetSysctlValue(Action):
         return self._current_value()
 
     def apply(self) -> None:
-        self._executor.run(f"sysctl -w {shlex.quote(self._key + '=' + self._value)}", stream=True)
+        self._executor.run(
+            f"sudo sysctl -w {shlex.quote(self._key + '=' + self._value)}", stream=True
+        )
 
     def verify(self) -> bool:
         return self._current_value() == self._value
 
     def rollback(self, snapshot: object) -> None:
         if snapshot is not None:
-            self._executor.run(f"sysctl -w {shlex.quote(self._key + '=' + str(snapshot))}")
+            self._executor.run(f"sudo sysctl -w {shlex.quote(self._key + '=' + str(snapshot))}")
 
 
 class InstallK3s(Action):
@@ -164,14 +168,14 @@ class InstallK3s(Action):
             env = f"INSTALL_K3S_VERSION={shlex.quote(self._version)}"
         else:
             env = f"INSTALL_K3S_CHANNEL={shlex.quote(self._channel)}"
-        self._executor.run(f"curl -sfL https://get.k3s.io | {env} sh -", stream=True)
+        self._executor.run(f"curl -sfL https://get.k3s.io | sudo {env} sh -", stream=True)
 
     def verify(self) -> bool:
         return self._executor.run("command -v k3s").ok
 
     def rollback(self, snapshot: object) -> None:
         if snapshot is None:
-            self._executor.run("/usr/local/bin/k3s-uninstall.sh")
+            self._executor.run("sudo /usr/local/bin/k3s-uninstall.sh")
 
 
 class SystemdServiceEnable(Action):
@@ -198,14 +202,14 @@ class SystemdServiceEnable(Action):
         return self._is_enabled()
 
     def apply(self) -> None:
-        self._executor.run(f"systemctl enable {shlex.quote(self._service)}", stream=True)
+        self._executor.run(f"sudo systemctl enable {shlex.quote(self._service)}", stream=True)
 
     def verify(self) -> bool:
         return self._is_enabled()
 
     def rollback(self, snapshot: object) -> None:
         if not snapshot:
-            self._executor.run(f"systemctl disable {shlex.quote(self._service)}")
+            self._executor.run(f"sudo systemctl disable {shlex.quote(self._service)}")
 
 
 class SystemdServiceStart(Action):
@@ -232,14 +236,14 @@ class SystemdServiceStart(Action):
         return self._is_active()
 
     def apply(self) -> None:
-        self._executor.run(f"systemctl start {shlex.quote(self._service)}", stream=True)
+        self._executor.run(f"sudo systemctl start {shlex.quote(self._service)}", stream=True)
 
     def verify(self) -> bool:
         return self._is_active()
 
     def rollback(self, snapshot: object) -> None:
         if not snapshot:
-            self._executor.run(f"systemctl stop {shlex.quote(self._service)}")
+            self._executor.run(f"sudo systemctl stop {shlex.quote(self._service)}")
 
 
 class WaitK3sNodeReady(Action):
@@ -298,7 +302,7 @@ class FetchKubeconfig(Action):
         return None
 
     def apply(self) -> None:
-        result = self._executor.run("cat /etc/rancher/k3s/k3s.yaml")
+        result = self._executor.run("sudo cat /etc/rancher/k3s/k3s.yaml")
         if result.ok:
             self._local_path.parent.mkdir(parents=True, exist_ok=True)
             self._local_path.write_text(result.stdout, encoding="utf-8")
@@ -348,13 +352,13 @@ class UninstallK3s(Action):
 
     def apply(self) -> None:
         if self._remove_data:
-            self._executor.run("/usr/local/bin/k3s-uninstall.sh", stream=True)
+            self._executor.run("sudo /usr/local/bin/k3s-uninstall.sh", stream=True)
         else:
-            self._executor.run("systemctl stop k3s 2>/dev/null || true", stream=True)
-            self._executor.run("systemctl disable k3s 2>/dev/null || true", stream=True)
-            self._executor.run("rm -f /usr/local/bin/k3s", stream=True)
-            self._executor.run("rm -f /etc/systemd/system/k3s.service", stream=True)
-            self._executor.run("systemctl daemon-reload", stream=True)
+            self._executor.run("sudo systemctl stop k3s 2>/dev/null || true", stream=True)
+            self._executor.run("sudo systemctl disable k3s 2>/dev/null || true", stream=True)
+            self._executor.run("sudo rm -f /usr/local/bin/k3s", stream=True)
+            self._executor.run("sudo rm -f /etc/systemd/system/k3s.service", stream=True)
+            self._executor.run("sudo systemctl daemon-reload", stream=True)
 
         if self._remove_kubeconfig and self._local_kubeconfig is not None:
             self._local_kubeconfig.unlink(missing_ok=True)
