@@ -240,7 +240,9 @@ class SystemdServiceStart(Action):
         return self._is_active()
 
     def apply(self) -> None:
-        self._executor.run(f"sudo systemctl start {shlex.quote(self._service)}", stream=True)
+        # --no-block avoids hanging; WaitK3sNodeReady handles readiness
+        svc = shlex.quote(self._service)
+        self._executor.run(f"sudo systemctl start --no-block {svc}", stream=True)
 
     def verify(self) -> bool:
         return self._is_active()
