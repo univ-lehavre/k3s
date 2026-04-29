@@ -24,6 +24,7 @@ agent distant pour les metriques continues.
 ## Documentation
 
 - [Contribuer](CONTRIBUTING.md)
+- [Tester avec Multipass](docs/testing-multipass.md)
 - [Architecture](docs/architecture.md)
 - [Plan](docs/plan.md)
 - [Manifestes et inventaires](docs/manifest.md)

@@ -1,0 +1,74 @@
+apiVersion: cluster-pilot.dev/v1alpha1
+kind: Machine
+metadata:
+  name: pilot-test
+  labels:
+    env: test
+    role: k3s-server
+
+spec:
+  connectionRef: pilot-test
+
+  system:
+    packages:
+      present:
+        - curl
+        - iptables
+        - ca-certificates
+
+    sysctl:
+      net.ipv4.ip_forward: '1'
+      net.bridge.bridge-nf-call-iptables: '1'
+
+  k3s:
+    state: present
+    role: server
+    version: v1.33.1+k3s1
+
+    install:
+      channel: stable
+      method: official-script
+
+    config:
+      write-kubeconfig-mode: '0644'
+      disable:
+        - traefik
+        - servicelb
+
+    service:
+      enabled: true
+      running: true
+
+  health:
+    require:
+      - ssh.available
+      - system.os.supported
+      - system.disk.available
+      - system.memory.available
+      - systemd.k3s.running
+      - k3s.node.ready
+
+    thresholds:
+      diskFreePercent: 10
+      memoryFreeMiB: 256
+
+  execution:
+    mode: transactional
+
+    verify:
+      afterEachAction: true
+      timeoutSeconds: 180
+
+    rollback:
+      enabled: true
+      on:
+        - applyFailure
+        - verifyFailure
+      requireConfirmFor:
+        - destructive
+      strategy: reverse-applied-actions
+
+    journal:
+      location: local
+      path: .pilot/runs
+      keep: 20
