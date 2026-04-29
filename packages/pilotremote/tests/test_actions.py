@@ -237,6 +237,27 @@ def test_systemd_start_apply() -> None:
     assert any("systemctl start" in cmd and "k3s" in cmd for cmd in executor.calls)
 
 
+def test_systemd_start_verify_accepts_active() -> None:
+    executor = FakeExecutor(
+        {"systemctl show k3s --property=ActiveState": ok("", "ActiveState=active\n")}
+    )
+    assert SystemdServiceStart(executor, "k3s").verify() is True
+
+
+def test_systemd_start_verify_accepts_activating() -> None:
+    executor = FakeExecutor(
+        {"systemctl show k3s --property=ActiveState": ok("", "ActiveState=activating\n")}
+    )
+    assert SystemdServiceStart(executor, "k3s").verify() is True
+
+
+def test_systemd_start_verify_rejects_failed() -> None:
+    executor = FakeExecutor(
+        {"systemctl show k3s --property=ActiveState": ok("", "ActiveState=failed\n")}
+    )
+    assert SystemdServiceStart(executor, "k3s").verify() is False
+
+
 def test_systemd_start_rollback_stops_when_not_preexisting() -> None:
     executor = FakeExecutor()
     SystemdServiceStart(executor, "k3s").rollback(False)

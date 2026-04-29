@@ -241,6 +241,12 @@ class SystemdServiceStart(Action):
     def _is_active(self) -> bool:
         return self._executor.run(f"systemctl is-active --quiet {shlex.quote(self._service)}").ok
 
+    def _is_starting(self) -> bool:
+        # Accept activating state: service started but not yet fully ready
+        svc = shlex.quote(self._service)
+        result = self._executor.run(f"systemctl show {svc} --property=ActiveState")
+        return "ActiveState=activating" in result.stdout or "ActiveState=active" in result.stdout
+
     def snapshot(self) -> bool:
         return self._is_active()
 
@@ -250,7 +256,7 @@ class SystemdServiceStart(Action):
         self._executor.run(f"sudo systemctl start --no-block {svc}", stream=True)
 
     def verify(self) -> bool:
-        return self._is_active()
+        return self._is_starting()
 
     def rollback(self, snapshot: object) -> None:
         if not snapshot:
