@@ -274,7 +274,10 @@ class WaitK3sNodeReady(Action):
         self._executor.run(
             f"timeout {self._timeout} bash -c "
             f"'until k3s kubectl get node {node_q} --no-headers 2>/dev/null"
-            f' | grep -q " Ready "; do sleep 2; done\'',
+            f' | grep -q " Ready "; do'
+            f" echo 'node not ready yet, retrying in 5s...';"
+            f" sleep 5;"
+            f" done'",
             stream=True,
         )
 
