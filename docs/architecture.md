@@ -1,4 +1,4 @@
-# k3sp - Architecture
+# pilot - Architecture
 
 ## Table des matieres
 
@@ -63,7 +63,7 @@ Extension pour les metriques continues :
   l'agent distant.
 
 Cette extension reste dans le meme monorepo tant que l'agent est pilote par
-`k3sp` et evolue avec son client Python. Un depot separe ne devient preferable
+`pilot` et evolue avec son client Python. Un depot separe ne devient preferable
 que si l'agent obtient son propre cycle de release, plusieurs consommateurs
 independants, ou une compatibilite inter-versions longue duree.
 
@@ -167,7 +167,7 @@ application Python locale
 ```
 
 Le service gRPC ne doit pas etre expose publiquement par defaut. Si la seule
-connexion autorisee est SSH, `k3sp` ouvre ou documente un tunnel local avant de
+connexion autorisee est SSH, `pilot` ouvre ou documente un tunnel local avant de
 se connecter au service.
 
 Contrat initial envisage :
@@ -196,40 +196,40 @@ Les fichiers generes Go et Python ne sont pas le contrat source. Le fichier
 
 ## CLI cible
 
-Le binaire s'appelle `k3sp`.
+Le binaire s'appelle `pilot`.
 
 Gestion des contextes :
 
 ```bash
-k3sp context set <name> <manifest> <inventory>
-k3sp context use <name>
-k3sp context list
-k3sp context show
+pilot context set <name> <manifest> <inventory>
+pilot context use <name>
+pilot context list
+pilot context show
 ```
 
 Commandes initiales :
 
 ```bash
-k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
-k3sp plan examples/single-server.yaml
-k3sp apply examples/single-server.yaml
-k3sp verify examples/single-server.yaml
-k3sp rollback --run-id <run-id>
-k3sp journal
+pilot inspect examples/single-server.yaml --inventory inventory.local.yaml
+pilot plan examples/single-server.yaml
+pilot apply examples/single-server.yaml
+pilot verify examples/single-server.yaml
+pilot rollback --run-id <run-id>
+pilot journal
 ```
 
 Commandes utiles ensuite :
 
 ```bash
-k3sp apply examples/single-server.yaml --inventory inventory.local.yaml --step
-k3sp apply examples/single-server.yaml --inventory inventory.local.yaml --from action.install-k3s
-k3sp drift examples/single-server.yaml --inventory inventory.local.yaml
-k3sp doctor examples/single-server.yaml --inventory inventory.local.yaml
+pilot apply examples/single-server.yaml --inventory inventory.local.yaml --step
+pilot apply examples/single-server.yaml --inventory inventory.local.yaml --from action.install-k3s
+pilot drift examples/single-server.yaml --inventory inventory.local.yaml
+pilot doctor examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 ## Modes CLI
 
-`k3sp` doit couvrir trois modes d'usage complementaires.
+`pilot` doit couvrir trois modes d'usage complementaires.
 
 ### Mode commande
 
@@ -237,10 +237,10 @@ Le mode commande est le mode CLI explicite actuel. L'utilisateur choisit une
 commande et ses arguments :
 
 ```bash
-k3sp validate examples/single-server.yaml
-k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
-k3sp plan examples/single-server.yaml --inventory inventory.local.yaml
-k3sp apply examples/single-server.yaml --inventory inventory.local.yaml
+pilot validate examples/single-server.yaml
+pilot inspect examples/single-server.yaml --inventory inventory.local.yaml
+pilot plan examples/single-server.yaml --inventory inventory.local.yaml
+pilot apply examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Ce mode privilegie la predictibilite et la composabilite shell.
@@ -261,10 +261,10 @@ Objectifs :
 Commandes ciblees :
 
 ```bash
-k3sp ci validate --manifest examples/single-server.yaml
-k3sp ci inspect --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
-k3sp ci plan --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
-k3sp ci drift --manifest examples/single-server.yaml --inventory inventory.local.yaml
+pilot ci validate --manifest examples/single-server.yaml
+pilot ci inspect --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
+pilot ci plan --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
+pilot ci drift --manifest examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 ### Mode smart
@@ -284,8 +284,8 @@ Exemples d'intentions :
 Commande cible :
 
 ```bash
-k3sp smart
-k3sp smart examples/single-server.yaml --inventory inventory.local.yaml
+pilot smart
+pilot smart examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Le mode smart reste explicable : chaque proposition doit indiquer pourquoi elle
@@ -474,12 +474,12 @@ L'upgrade k3s (`k3s.upgrade`) porte un risque eleve pour les raisons suivantes :
 - Le rollback (`compensating`) reinstalle l'ancienne version mais ne garantit pas la restauration de l'etat etcd si des migrations de schema ont eu lieu.
 - En cas d'echec de verification post-upgrade, le rollback peut lui-meme echouer si le script d'installation ne trouve plus la version anterieure dans le canal stable.
 
-Recommandation : toujours tester un upgrade sur un noeud de staging avant production, et utiliser `k3sp plan --dry-run` pour verifier les actions prevues.
+Recommandation : toujours tester un upgrade sur un noeud de staging avant production, et utiliser `pilot plan --dry-run` pour verifier les actions prevues.
 
 ## Manifeste d'installation
 
 ```yaml
-apiVersion: k3s-pilot.dev/v1alpha1
+apiVersion: cluster-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -561,14 +561,14 @@ spec:
 
     journal:
       location: local
-      path: .k3sp/runs
+      path: .pilot/runs
       keep: 20
 ```
 
 ## Manifeste de desinstallation
 
 ```yaml
-apiVersion: k3s-pilot.dev/v1alpha1
+apiVersion: cluster-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -605,7 +605,7 @@ reelles. Ils referencent une entree d'inventaire via `spec.connectionRef`.
 Exemple versionnable :
 
 ```yaml
-apiVersion: k3s-pilot.dev/v1alpha1
+apiVersion: cluster-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -639,7 +639,7 @@ Convention :
 Commande cible :
 
 ```bash
-k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
+pilot inspect examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 ## Exemple de plan

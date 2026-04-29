@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package k3s.metrics.v1alpha1;
 
-option go_package = "github.com/univ-lehavre/k3s-pilot/agents/pilotagent/gen/pilotmetrics/v1alpha1;pilotmetricspb";
+option go_package = "github.com/univ-lehavre/cluster-pilot/agents/pilotagent/gen/pilotmetrics/v1alpha1;pilotmetricspb";
 
 service Metrics {
   rpc StreamCpu(CpuRequest) returns (stream CpuSample);

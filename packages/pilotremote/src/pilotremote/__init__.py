@@ -1,4 +1,4 @@
-"""Remote execution adapters for k3sp."""
+"""Remote execution adapters for pilot."""
 
 from pilotremote.actions import EnsurePackagePresent, SetSysctlValue, WriteRemoteFile
 from pilotremote.executor import CommandResult, RemoteExecutor, SshExecutor

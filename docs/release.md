@@ -14,7 +14,7 @@
 Le depot utilise une version unique synchronisee pour tous les paquets du
 monorepo :
 
-- `k3s-pilot`
+- `cluster-pilot`
 - `pilotplan`
 - `pilotremote`
 - `pilotcli`
@@ -22,7 +22,7 @@ monorepo :
 Les versions sont mises a jour ensemble par Commitizen.
 
 L'agent Go dans `agents/pilotagent` suit la meme version produit que les paquets
-Python tant qu'il reste pilote par `k3sp`. Si l'agent devient un composant
+Python tant qu'il reste pilote par `pilot`. Si l'agent devient un composant
 autonome avec son propre cycle de release, la strategie de version devra etre
 separee explicitement.
 

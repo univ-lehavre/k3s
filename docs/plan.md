@@ -1,6 +1,6 @@
 # Plan
 
-Ce document suit le phasage du projet `k3sp`.
+Ce document suit le phasage du projet `pilot`.
 
 ## Table des matieres
 
@@ -54,13 +54,13 @@ Actions :
 - ✅ configurer le workspace `uv`
 - ✅ creer les paquets `pilotplan`, `pilotremote`, `pilotcli`
 - ✅ configurer `pytest`, `ruff`, `mypy`
-- ✅ exposer le script `k3sp`
+- ✅ exposer le script `pilot`
 - ✅ ajouter `pre-commit` et les hooks Git
 - ✅ ajouter Commitizen pour version, bump et changelog
 
 Definition of done :
 
-- ✅ `uv run k3sp --help` fonctionne
+- ✅ `uv run pilot --help` fonctionne
 - ✅ `uv run pytest` fonctionne
 - ✅ `uv run ruff check .` fonctionne
 - ✅ `uv run mypy packages` fonctionne
@@ -80,7 +80,7 @@ Actions :
 - ✅ ajouter `examples/single-server.yaml`
 - ✅ ajouter `examples/uninstall.yaml`
 - ✅ ajouter `examples/inventory.example.yaml`
-- ✅ ajouter la commande `k3sp validate <manifest>`
+- ✅ ajouter la commande `pilot validate <manifest>`
 - ✅ accepter `spec.connectionRef` pour eviter les connexions reelles dans les manifests publics
 - ✅ ajouter `--inventory` pour valider la resolution de connexion
 - ✅ ignorer `inventory.local.yaml` et `*.local.yaml`
@@ -114,7 +114,7 @@ Actions :
 - ✅ collecter OS, distribution, version, architecture, systemd, k3s, disque, memoire
 - ✅ collecter l'etat APT : disponibilite, fraicheur des listes et paquets upgradables
 - ✅ collecter les paquets et sysctl declares dans le manifeste
-- ✅ ajouter la commande `k3sp inspect <manifest>`
+- ✅ ajouter la commande `pilot inspect <manifest>`
 
 Definition of done :
 
@@ -140,7 +140,7 @@ Actions :
 
 - ✅ definir les classes `ObservedState`, `Plan` et `ActionSpec`
 - ✅ implementer le diff `desired + observed -> plan`
-- ✅ ajouter la commande `k3sp plan <manifest>`
+- ✅ ajouter la commande `pilot plan <manifest>`
 - ✅ afficher le plan avec `rich`
 
 Definition of done :
@@ -190,14 +190,14 @@ Actions :
 - ✅ ecrire un journal local par `run_id`
 - ✅ enregistrer snapshots, statuts et erreurs
 - ✅ executer le rollback en ordre inverse
-- ✅ ajouter `k3sp apply <manifest>`
+- ✅ ajouter `pilot apply <manifest>`
 
 Definition of done :
 
 - ✅ une action echouee stoppe l'execution
 - ✅ les actions deja appliquees sont rollbackees si possible
-- ✅ `k3sp journal list` liste les executions
-- ⬜ `k3sp rollback --run-id <run-id>` fonctionne pour les actions rollbackables
+- ✅ `pilot journal list` liste les executions
+- ⬜ `pilot rollback --run-id <run-id>` fonctionne pour les actions rollbackables
 
 Livrables :
 
@@ -222,9 +222,9 @@ Actions :
 
 Definition of done :
 
-- ✅ `k3sp plan` annonce les actions d'installation
-- ✅ `k3sp apply` execute le plan complet via le runner transactionnel
-- ⬜ `k3sp verify` confirme service running, version attendue et node ready (Phase 8)
+- ✅ `pilot plan` annonce les actions d'installation
+- ✅ `pilot apply` execute le plan complet via le runner transactionnel
+- ⬜ `pilot verify` confirme service running, version attendue et node ready (Phase 8)
 
 Livrables :
 
@@ -263,8 +263,8 @@ Objectif : rendre l'outil utile au quotidien.
 
 Actions :
 
-- ✅ ajouter `k3sp doctor <manifest>`
-- ✅ ajouter `k3sp drift <manifest>`
+- ✅ ajouter `pilot doctor <manifest>`
+- ✅ ajouter `pilot drift <manifest>`
 - ✅ structurer les checks de sante
 - ✅ afficher un verdict clair : `healthy`, `degraded`, `unhealthy`
 
@@ -289,7 +289,7 @@ Actions :
 - ⬜ ajouter tests d'integration sur VM ou container systemd si possible
 - ✅ documenter les limites de rollback
 - ✅ documenter les risques d'upgrade k3s
-- ✅ ajouter mode `--dry-run` sur `k3sp apply`
+- ✅ ajouter mode `--dry-run` sur `pilot apply`
 - ✅ ajouter confirmations pour actions a risque eleve
 - ⬜ stabiliser le schema `v1alpha1`
 - ✅ documenter la separation manifeste public / inventaire prive
@@ -306,7 +306,7 @@ Definition of done :
 
 Statut : ⬜ `todo`
 
-Objectif : adapter l'experience `k3sp` a trois usages distincts sans
+Objectif : adapter l'experience `pilot` a trois usages distincts sans
 dupliquer le moteur declaratif.
 
 Modes cibles :
@@ -323,8 +323,8 @@ Actions :
 - ⬜ formaliser les contrats de sortie JSON pour `validate`, `inspect`, `plan`,
   `doctor` et `drift`
 - ⬜ documenter les codes de sortie CI
-- ⬜ ajouter un sous-ensemble `k3sp ci ...` non interactif
-- ⬜ ajouter `k3sp smart` avec contexte actif optionnel
+- ⬜ ajouter un sous-ensemble `pilot ci ...` non interactif
+- ⬜ ajouter `pilot smart` avec contexte actif optionnel
 - ⬜ creer un modele de suggestion avec commande equivalente, justification,
   risque et prerequis
 - ⬜ proposer `context set` quand aucun contexte actif n'est configure
@@ -360,6 +360,6 @@ Actions :
 Definition of done :
 
 - ✅ un agent Go peut etre compile en binaire autonome
-- ⬜ `k3sp` peut consommer le stream CPU via gRPC
+- ⬜ `pilot` peut consommer le stream CPU via gRPC
 - ⬜ le flux fonctionne quand le seul acces reseau est SSH
 - ⬜ les contrats Protobuf sont versionnes et partages par Go et Python

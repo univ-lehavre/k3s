@@ -1,0 +1,15 @@
+{
+  "run_id": "20260428T163235Z",
+  "target": "prod-1",
+  "started_at": "2026-04-28T16:32:35.771612+00:00",
+  "success": false,
+  "actions": [
+    {
+      "id": "file.write.config.yaml",
+      "description": "Write /etc/rancher/k3s/config.yaml",
+      "status": "failed_verify",
+      "snapshot": null,
+      "error": "verification failed for file.write.config.yaml"
+    }
+  ]
+}

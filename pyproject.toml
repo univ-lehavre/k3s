@@ -1,5 +1,5 @@
 [project]
-name = "k3s-pilot"
+name = "cluster-pilot"
 version = "0.2.0"
 description = "Declarative k3s machine reconciler workspace"
 readme = "README.md"

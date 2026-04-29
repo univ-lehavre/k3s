@@ -52,7 +52,7 @@ class FailPrecheckAction(OkAction):
 
 
 def make_runner(tmp_path: Path) -> Runner:
-    journal = Journal(tmp_path / ".k3sp" / "runs")
+    journal = Journal(tmp_path / ".pilot" / "runs")
     return Runner(journal)
 
 
@@ -66,7 +66,7 @@ def test_runner_succeeds_with_all_ok_actions(tmp_path: Path) -> None:
 
 
 def test_runner_writes_journal_on_success(tmp_path: Path) -> None:
-    journal = Journal(tmp_path / ".k3sp" / "runs")
+    journal = Journal(tmp_path / ".pilot" / "runs")
     runner = Runner(journal)
     runner.run("prod-1", [OkAction("a")])
 

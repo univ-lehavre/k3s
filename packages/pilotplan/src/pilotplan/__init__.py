@@ -1,4 +1,4 @@
-"""Planning engine for k3sp."""
+"""Planning engine for pilot."""
 
 from pilotplan.manifest import (
     Connection,

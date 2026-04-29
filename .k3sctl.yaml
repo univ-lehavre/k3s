@@ -1,0 +1,11 @@
+current-context: default
+contexts:
+  default:
+    manifest: examples/single-server.yaml
+    inventory: inventory.local.yaml
+  uninstall:
+    manifest: examples/uninstall.yaml
+    inventory: inventory.local.yaml
+  production:
+    manifest: examples/cilium-server.yaml
+    inventory: inventory.local.yaml

@@ -91,7 +91,7 @@ class RollbackOptions(BaseModel):
 
 class JournalOptions(BaseModel):
     location: Literal["local"] = "local"
-    path: str = ".k3sp/runs"
+    path: str = ".pilot/runs"
     keep: int = 20
 
 
@@ -124,7 +124,7 @@ class Spec(BaseModel):
 
 
 class DesiredState(BaseModel):
-    apiVersion: Literal["k3s-pilot.dev/v1alpha1"]
+    apiVersion: Literal["cluster-pilot.dev/v1alpha1"]
     kind: Literal["Machine"]
     metadata: Metadata
     spec: Spec

@@ -5,7 +5,7 @@ les conventions locales.
 
 ## Contexte projet
 
-`k3sp` est un outil declaratif experimental pour inspecter, planifier et
+`pilot` est un outil declaratif experimental pour inspecter, planifier et
 reconcilier l'etat k3s d'une machine distante.
 
 Le modele mental est :
@@ -20,7 +20,7 @@ desired state -> observed state -> plan -> action -> verify -> commit/rollback
   journal et sante.
 - `packages/pilotremote` : adaptateurs systeme et execution distante, notamment
   SSH.
-- `packages/pilotcli` : CLI `k3sp`, commandes Typer et affichage Rich.
+- `packages/pilotcli` : CLI `pilot`, commandes Typer et affichage Rich.
 - `docs/architecture.md` : architecture cible.
 - `docs/plan.md` : phasage du projet.
 - `docs/manifest.md` : manifestes et inventaires.
@@ -70,10 +70,10 @@ uv run pytest
 Lancer le CLI :
 
 ```bash
-uv run k3sp --help
-uv run k3sp validate examples/single-server.yaml
-uv run k3sp plan examples/single-server.yaml
-uv run k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
+uv run pilot --help
+uv run pilot validate examples/single-server.yaml
+uv run pilot plan examples/single-server.yaml
+uv run pilot inspect examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Installer les hooks :
@@ -116,7 +116,7 @@ par Git.
 Pour les exemples publics, utiliser :
 
 ```bash
-uv run k3sp validate examples/single-server.yaml --inventory examples/inventory.example.yaml
+uv run pilot validate examples/single-server.yaml --inventory examples/inventory.example.yaml
 ```
 
 ## Style documentaire

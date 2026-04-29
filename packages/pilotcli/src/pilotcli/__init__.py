@@ -1,1 +1,1 @@
-"""CLI package for k3sp."""
+"""CLI package for pilot."""

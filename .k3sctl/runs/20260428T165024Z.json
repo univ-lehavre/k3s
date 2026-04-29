@@ -1,0 +1,22 @@
+{
+  "run_id": "20260428T165024Z",
+  "target": "prod-1",
+  "started_at": "2026-04-28T16:50:24.785288+00:00",
+  "success": false,
+  "actions": [
+    {
+      "id": "file.write.config.yaml",
+      "description": "Write /etc/rancher/k3s/config.yaml",
+      "status": "rolled_back",
+      "snapshot": "cluster-init: true\nwrite-kubeconfig-mode: '0644'\ndisable:\n- traefik\n- servicelb",
+      "error": null
+    },
+    {
+      "id": "k3s.node.ready",
+      "description": "Wait for node Ready",
+      "status": "failed_verify",
+      "snapshot": null,
+      "error": "verification failed for k3s.node.ready"
+    }
+  ]
+}

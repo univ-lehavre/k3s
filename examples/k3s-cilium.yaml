@@ -1,4 +1,4 @@
-apiVersion: k3s-pilot.dev/v1alpha1
+apiVersion: cluster-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -90,5 +90,5 @@ spec:
 
     journal:
       location: local
-      path: .k3sp/runs
+      path: .pilot/runs
       keep: 20

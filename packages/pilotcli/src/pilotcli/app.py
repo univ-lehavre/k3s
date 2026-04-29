@@ -15,12 +15,12 @@ from rich.table import Table
 from ruamel.yaml import YAML
 
 app = typer.Typer(help="Declarative k3s machine reconciler.")
-context_app = typer.Typer(help="Manage local k3sp context.")
+context_app = typer.Typer(help="Manage local pilot context.")
 journal_app = typer.Typer(help="Manage execution journal.")
 app.add_typer(context_app, name="context")
 app.add_typer(journal_app, name="journal")
 console = Console()
-DEFAULT_CONTEXT_PATH = Path(".k3sp.yaml")
+DEFAULT_CONTEXT_PATH = Path(".pilot.yaml")
 
 
 def _load_raw(path: Path = DEFAULT_CONTEXT_PATH) -> dict[str, Any]:
@@ -60,7 +60,7 @@ def resolve_paths(manifest: Path | None, inventory: Path | None) -> tuple[Path, 
     resolved_inventory = inventory or context.get("inventory")
 
     if resolved_manifest is None:
-        raise typer.BadParameter("manifest is required or must be configured in .k3sp.yaml")
+        raise typer.BadParameter("manifest is required or must be configured in .pilot.yaml")
 
     return resolved_manifest, resolved_inventory
 
@@ -339,7 +339,7 @@ def inspect(manifest: ManifestArgument = None, inventory: Path | None = None) ->
 
 
 @journal_app.command("list")
-def journal_list(path: Path = Path(".k3sp/runs")) -> None:
+def journal_list(path: Path = Path(".pilot/runs")) -> None:
     """List past executions."""
     journal = Journal(path)
     runs = journal.list_runs()

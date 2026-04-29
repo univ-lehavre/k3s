@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/univ-lehavre/k3s-pilot/agents/pilotagent/internal/metrics"
+	"github.com/univ-lehavre/cluster-pilot/agents/pilotagent/internal/metrics"
 )
 
 type cpuSample struct {
