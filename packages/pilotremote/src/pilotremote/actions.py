@@ -172,7 +172,12 @@ class InstallK3s(Action):
             env = f"INSTALL_K3S_VERSION={shlex.quote(self._version)}"
         else:
             env = f"INSTALL_K3S_CHANNEL={shlex.quote(self._channel)}"
-        self._executor.run(f"curl -sfL https://get.k3s.io | sudo {env} sh -", stream=True)
+        # INSTALL_K3S_SKIP_START=true prevents the script from blocking on systemctl start;
+        # SystemdServiceStart handles the start separately with --no-block.
+        self._executor.run(
+            f"curl -sfL https://get.k3s.io | sudo {env} INSTALL_K3S_SKIP_START=true sh -",
+            stream=True,
+        )
 
     def verify(self) -> bool:
         return self._executor.run("command -v k3s").ok
@@ -236,14 +241,22 @@ class SystemdServiceStart(Action):
     def _is_active(self) -> bool:
         return self._executor.run(f"systemctl is-active --quiet {shlex.quote(self._service)}").ok
 
+    def _is_starting(self) -> bool:
+        # Accept activating state: service started but not yet fully ready
+        svc = shlex.quote(self._service)
+        result = self._executor.run(f"systemctl show {svc} --property=ActiveState")
+        return "ActiveState=activating" in result.stdout or "ActiveState=active" in result.stdout
+
     def snapshot(self) -> bool:
         return self._is_active()
 
     def apply(self) -> None:
-        self._executor.run(f"sudo systemctl start {shlex.quote(self._service)}", stream=True)
+        # --no-block avoids hanging; WaitK3sNodeReady handles readiness
+        svc = shlex.quote(self._service)
+        self._executor.run(f"sudo systemctl start --no-block {svc}", stream=True)
 
     def verify(self) -> bool:
-        return self._is_active()
+        return self._is_starting()
 
     def rollback(self, snapshot: object) -> None:
         if not snapshot:
@@ -268,13 +281,23 @@ class WaitK3sNodeReady(Action):
         return None
 
     def apply(self) -> None:
+        import time
+
         node_q = shlex.quote(self._node)
-        self._executor.run(
-            f"timeout {self._timeout} bash -c "
-            f"'until k3s kubectl get node {node_q} --no-headers 2>/dev/null"
-            f' | grep -q " Ready "; do sleep 2; done\'',
-            stream=True,
-        )
+        deadline = time.monotonic() + self._timeout
+        while time.monotonic() < deadline:
+            node_status = self._executor.run(
+                f"k3s kubectl get node {node_q} --no-headers 2>/dev/null"
+            )
+            if node_status.ok and "Ready" in node_status.stdout:
+                return
+            # systemctl status always produces output regardless of the service state
+            self._executor.run(
+                "systemctl status k3s --no-pager -l --lines=5 2>&1 || true",
+                stream=True,
+            )
+            time.sleep(5)
+        raise TimeoutError(f"k3s node {self._node!r} not ready after {self._timeout}s")
 
     def verify(self) -> bool:
         node_q = shlex.quote(self._node)

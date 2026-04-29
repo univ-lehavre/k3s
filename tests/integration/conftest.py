@@ -32,7 +32,7 @@ def _write_fixtures(tmp_path: Path) -> tuple[Path, Path]:
                     "k3s": {
                         "state": "present",
                         "role": "server",
-                        "version": "v1.33.1+k3s1",
+                        "version": "v1.35.4+k3s1",
                         "install": {"channel": "stable", "method": "official-script"},
                         "config": {
                             "write-kubeconfig-mode": "0644",

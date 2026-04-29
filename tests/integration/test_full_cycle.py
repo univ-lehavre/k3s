@@ -1,25 +1,39 @@
 """Integration tests: full apply → doctor → uninstall cycle against a real container."""
 
+import io
 import subprocess
 import sys
 from pathlib import Path
 
 
-def _pilot(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, "-m", "pilotcli.app", *args],
-        capture_output=True,
-        text=True,
-        cwd=cwd,
-    )
-
-
 def pilot(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    """Run a pilot command, streaming output live and capturing it for assertions."""
+    stdout_buf = io.StringIO()
+    stderr_buf = io.StringIO()
+
+    with subprocess.Popen(
         ["uv", "run", "pilot", *args],
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
         cwd=cwd,
+    ) as proc:
+        assert proc.stdout is not None
+        assert proc.stderr is not None
+        for line in proc.stdout:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            stdout_buf.write(line)
+        for line in proc.stderr:
+            sys.stderr.write(line)
+            sys.stderr.flush()
+            stderr_buf.write(line)
+
+    return subprocess.CompletedProcess(
+        args=proc.args,
+        returncode=proc.returncode,
+        stdout=stdout_buf.getvalue(),
+        stderr=stderr_buf.getvalue(),
     )
 
 

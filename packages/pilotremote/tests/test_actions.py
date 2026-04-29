@@ -237,6 +237,27 @@ def test_systemd_start_apply() -> None:
     assert any("systemctl start" in cmd and "k3s" in cmd for cmd in executor.calls)
 
 
+def test_systemd_start_verify_accepts_active() -> None:
+    executor = FakeExecutor(
+        {"systemctl show k3s --property=ActiveState": ok("", "ActiveState=active\n")}
+    )
+    assert SystemdServiceStart(executor, "k3s").verify() is True
+
+
+def test_systemd_start_verify_accepts_activating() -> None:
+    executor = FakeExecutor(
+        {"systemctl show k3s --property=ActiveState": ok("", "ActiveState=activating\n")}
+    )
+    assert SystemdServiceStart(executor, "k3s").verify() is True
+
+
+def test_systemd_start_verify_rejects_failed() -> None:
+    executor = FakeExecutor(
+        {"systemctl show k3s --property=ActiveState": ok("", "ActiveState=failed\n")}
+    )
+    assert SystemdServiceStart(executor, "k3s").verify() is False
+
+
 def test_systemd_start_rollback_stops_when_not_preexisting() -> None:
     executor = FakeExecutor()
     SystemdServiceStart(executor, "k3s").rollback(False)
@@ -246,10 +267,12 @@ def test_systemd_start_rollback_stops_when_not_preexisting() -> None:
 # --- WaitK3sNodeReady ---
 
 
-def test_wait_node_ready_apply_runs_timeout_loop() -> None:
-    executor = FakeExecutor()
+def test_wait_node_ready_apply_returns_when_ready() -> None:
+    executor = FakeExecutor(
+        {"k3s kubectl get node prod-1 --no-headers 2>/dev/null": ok("", "prod-1   Ready   <none>")}
+    )
     WaitK3sNodeReady(executor, "prod-1", 60).apply()
-    assert any("timeout 60" in cmd and "prod-1" in cmd for cmd in executor.calls)
+    assert any("prod-1" in cmd for cmd in executor.calls)
 
 
 def test_wait_node_ready_verify_ok() -> None:

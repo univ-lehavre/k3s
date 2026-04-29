@@ -96,6 +96,8 @@ k3s/
         systemd.py
         files.py
         packages.py
+        metrics_client.py
+        gen/
       tests/
 
     pilotcli/
@@ -110,6 +112,10 @@ k3s/
       cmd/pilotagent/
         main.go
       internal/
+        metrics/
+        server/
+      gen/
+        pilotmetrics/v1alpha1/
 
   proto/
     pilotmetrics.proto
@@ -122,6 +128,7 @@ k3s/
   docs/
     architecture.md
     manifest.md
+    agent-grpc.md
 ```
 
 Responsabilites :
@@ -170,7 +177,7 @@ Le service gRPC ne doit pas etre expose publiquement par defaut. Si la seule
 connexion autorisee est SSH, `pilot` ouvre ou documente un tunnel local avant de
 se connecter au service.
 
-Contrat initial envisage :
+Contrat :
 
 ```proto
 syntax = "proto3";

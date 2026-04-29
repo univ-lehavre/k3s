@@ -5,6 +5,8 @@ description = "Remote execution adapters for pilot"
 requires-python = ">=3.12"
 dependencies = [
     "fabric>=3.2.0",
+    "grpcio>=1.60.0",
+    "protobuf>=4.25.0",
     "pilotplan",
 ]
 

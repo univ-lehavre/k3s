@@ -1,0 +1,131 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Liste les tâches disponibles
+    cmds:
+      - task --list
+    silent: true
+
+  # ── Qualité ────────────────────────────────────────────────────────────────
+
+  fmt:
+    desc: Formate le code Python (ruff)
+    cmds:
+      - uv run ruff format .
+
+  lint:
+    desc: Vérifie le style Python (ruff)
+    cmds:
+      - uv run ruff check .
+
+  lint:fix:
+    desc: Corrige automatiquement les erreurs ruff
+    cmds:
+      - uv run ruff check --fix .
+
+  typecheck:
+    desc: Vérifie les types Python (mypy)
+    cmds:
+      - uv run mypy packages
+
+  check:
+    desc: fmt + lint + typecheck + test Python + test Go
+    deps: [fmt, lint, typecheck, test, go:test]
+
+  # ── Tests ──────────────────────────────────────────────────────────────────
+
+  test:
+    desc: Lance les tests unitaires Python
+    cmds:
+      - uv run pytest
+
+  test:int:
+    desc: Lance les tests d'intégration (Docker requis)
+    deps: [docker:build:target]
+    cmds:
+      - task: clean:containers
+      - uv run pytest tests/integration/ -v -s -p no:timeout
+
+  # ── Agent Go ───────────────────────────────────────────────────────────────
+
+  go:build:
+    desc: Compile l'agent Go
+    dir: agents/pilotagent
+    cmds:
+      - go build ./cmd/pilotagent
+
+  go:test:
+    desc: Lance les tests Go
+    dir: agents/pilotagent
+    cmds:
+      - go test ./...
+
+  go:run:
+    desc: Démarre l'agent en mode gRPC (127.0.0.1:50051)
+    dir: agents/pilotagent
+    cmds:
+      - go run ./cmd/pilotagent -mode grpc
+
+  go:run:json:
+    desc: Démarre l'agent en mode JSON stdout
+    dir: agents/pilotagent
+    cmds:
+      - go run ./cmd/pilotagent -mode json
+
+  # ── Protobuf ───────────────────────────────────────────────────────────────
+
+  proto:gen:
+    desc: Régénère les stubs Go et Python depuis pilotmetrics.proto
+    cmds:
+      - protoc --proto_path=proto
+          --go_out=agents/pilotagent/gen/pilotmetrics/v1alpha1
+          --go_opt=paths=source_relative
+          --go-grpc_out=agents/pilotagent/gen/pilotmetrics/v1alpha1
+          --go-grpc_opt=paths=source_relative
+          proto/pilotmetrics.proto
+      - uv run --with grpcio-tools python -m grpc_tools.protoc
+          --proto_path=proto
+          --python_out=packages/pilotremote/src/pilotremote/gen
+          --grpc_python_out=packages/pilotremote/src/pilotremote/gen
+          proto/pilotmetrics.proto
+      - |
+        sed -i '' 's/^import pilotmetrics_pb2/from pilotremote.gen import pilotmetrics_pb2/' \
+          packages/pilotremote/src/pilotremote/gen/pilotmetrics_pb2_grpc.py
+
+  # ── Nettoyage ──────────────────────────────────────────────────────────────
+
+  clean:containers:
+    desc: Stoppe les containers de test résiduels (port 2222)
+    cmds:
+      - |
+        IDS=$(docker ps -q --filter "publish=2222")
+        if [ -n "$IDS" ]; then
+          echo "Arrêt des containers résiduels sur le port 2222 : $IDS"
+          docker stop $IDS
+        fi
+    silent: false
+
+  # ── Docker ─────────────────────────────────────────────────────────────────
+
+  docker:build:target:
+    desc: Construit l'image Docker de test
+    cmds:
+      - docker build -t cluster-pilot-test-target docker/test-target/
+
+  docker:build:agent:
+    desc: Construit l'image Docker de l'agent Go
+    cmds:
+      - docker build -f agents/pilotagent/Dockerfile .
+
+  # ── Dépendances ────────────────────────────────────────────────────────────
+
+  install:
+    desc: Installe toutes les dépendances Python
+    cmds:
+      - uv sync --all-packages --dev
+
+  install:frozen:
+    desc: Installe les dépendances Python (lockfile strict)
+    cmds:
+      - uv sync --all-packages --dev --frozen

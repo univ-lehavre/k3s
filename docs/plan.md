@@ -39,7 +39,7 @@ Ce document suit le phasage du projet `pilot`.
 ✅ Phase 8  Health et drift
 🟡 Phase 9  Durcissement
 ⬜ Phase 10 Modes CI, commande et smart
-🟡 Phase 11 Agent Go et metriques continues
+✅ Phase 11 Agent Go et metriques continues
 ```
 
 ## Phase 0 - Cadrage du socle
@@ -341,7 +341,7 @@ Definition of done :
 
 ## Phase 11 - Agent Go et metriques continues
 
-Statut : 🟡 `partial`
+Statut : ✅ `done`
 
 Objectif : fournir un canal durable pour streamer des metriques systeme sans
 dependre d'une commande SSH longue duree.
@@ -350,16 +350,16 @@ Actions :
 
 - ✅ creer `agents/pilotagent` avec un module Go dedie
 - ✅ creer `proto/pilotmetrics.proto` comme contrat source
-- ⬜ generer les stubs Go et Python depuis le contrat Protobuf
-- ⬜ implementer `StreamCpu` en gRPC dans l'agent Go
-- ⬜ faire ecouter l'agent sur `127.0.0.1` par defaut
-- ⬜ ajouter un client Python dans `pilotremote`
-- ⬜ documenter le tunnel SSH vers l'agent
+- ✅ generer les stubs Go et Python depuis le contrat Protobuf
+- ✅ implementer `StreamCpu` en gRPC dans l'agent Go
+- ✅ faire ecouter l'agent sur `127.0.0.1` par defaut
+- ✅ ajouter un client Python dans `pilotremote`
+- ✅ documenter le tunnel SSH vers l'agent
 - ✅ ajouter `go test ./...` et `go build` aux verifications du depot
 
 Definition of done :
 
 - ✅ un agent Go peut etre compile en binaire autonome
-- ⬜ `pilot` peut consommer le stream CPU via gRPC
-- ⬜ le flux fonctionne quand le seul acces reseau est SSH
-- ⬜ les contrats Protobuf sont versionnes et partages par Go et Python
+- ✅ `pilot` peut consommer le stream CPU via gRPC
+- ✅ le flux fonctionne quand le seul acces reseau est SSH
+- ✅ les contrats Protobuf sont versionnes et partages par Go et Python

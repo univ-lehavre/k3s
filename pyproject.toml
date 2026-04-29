@@ -34,6 +34,7 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+exclude = ["**/gen/**"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
@@ -55,6 +56,15 @@ mypy_path = [
     "packages/pilotremote/src",
     "packages/pilotcli/src",
 ]
+exclude = ["^.*/gen/.*\\.py$"]
+
+[[tool.mypy.overrides]]
+module = ["grpc", "grpc.*", "google.protobuf", "google.protobuf.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pilotremote.gen.*"]
+ignore_errors = true
 
 [tool.commitizen]
 name = "cz_conventional_commits"

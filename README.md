@@ -7,8 +7,8 @@ Outil declaratif experimental pour inspecter, planifier et reconciler l'etat k3s
 d'une machine distante.
 
 Le depot contient le CLI `pilot`, son moteur de planification, les adaptateurs
-d'execution distante, la documentation du projet et les premieres briques d'un
-agent distant pour les metriques continues.
+d'execution distante, la documentation du projet et un agent Go distant pour
+streamer les metriques systeme via gRPC sur tunnel SSH.
 
 ## Contenu
 
@@ -16,7 +16,7 @@ agent distant pour les metriques continues.
   journal et sante.
 - `packages/pilotremote` : adaptateurs systeme et execution distante.
 - `packages/pilotcli` : interface en ligne de commande `pilot`.
-- `agents/pilotagent` : agent Go experimental pour les metriques continues.
+- `agents/pilotagent` : agent Go pour le streaming gRPC de metriques systeme.
 - `proto` : contrats partages.
 - `examples` : exemples de manifestes et d'inventaires.
 - `docs` : documentation longue.
@@ -28,4 +28,5 @@ agent distant pour les metriques continues.
 - [Architecture](docs/architecture.md)
 - [Plan](docs/plan.md)
 - [Manifestes et inventaires](docs/manifest.md)
+- [Agent gRPC et tunnel SSH](docs/agent-grpc.md)
 - [Release](docs/release.md)
