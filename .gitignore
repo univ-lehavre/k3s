@@ -10,3 +10,4 @@ inventory.local.yaml
 .k3sctl.yaml
 .claude/
 .k3sctl/
+agents/k3sagent/k3sagent

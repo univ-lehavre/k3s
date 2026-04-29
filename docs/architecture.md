@@ -1,4 +1,20 @@
-# k3sctl - Architecture et phasage
+# k3sctl - Architecture
+
+## Table des matieres
+
+- [Objectif](#objectif)
+- [Choix techniques](#choix-techniques)
+- [Organisation du depot](#organisation-du-depot)
+- [Agent distant Go](#agent-distant-go)
+- [CLI cible](#cli-cible)
+- [Modes CLI](#modes-cli)
+- [Contrats du moteur](#contrats-du-moteur)
+- [Rollback](#rollback)
+- [Manifeste d'installation](#manifeste-dinstallation)
+- [Manifeste de desinstallation](#manifeste-de-desinstallation)
+- [Inventaire prive](#inventaire-prive)
+- [Exemple de plan](#exemple-de-plan)
+- [Plan](#plan)
 
 ## Objectif
 
@@ -38,9 +54,24 @@ Stack initiale :
 
 La distribution cible initiale est un outil lance depuis un poste ou une machine d'administration.
 
+Extension pour les metriques continues :
+
+- un agent distant ecrit en Go, livre comme binaire autonome ;
+- un contrat Protobuf partage entre l'agent Go et le client Python ;
+- gRPC pour les flux de metriques, par exemple CPU, memoire, disque et reseau ;
+- SSH comme transport d'administration et, si necessaire, comme tunnel vers
+  l'agent distant.
+
+Cette extension reste dans le meme monorepo tant que l'agent est pilote par
+`k3sctl` et evolue avec son client Python. Un depot separe ne devient preferable
+que si l'agent obtient son propre cycle de release, plusieurs consommateurs
+independants, ou une compatibilite inter-versions longue duree.
+
 ## Organisation du depot
 
 Le depot est un monorepo `uv workspace`, avec des paquets separes par responsabilite.
+Il est polyglotte : les paquets Python restent sous `packages/`, et l'agent Go
+vit dans une zone dediee pour ne pas melanger les responsabilites.
 
 ```text
 k3s/
@@ -73,6 +104,16 @@ k3s/
         commands/
       tests/
 
+  agents/
+    k3sagent/
+      go.mod
+      cmd/k3sagent/
+        main.go
+      internal/
+
+  proto/
+    k3smetrics.proto
+
   examples/
     single-server.yaml
     uninstall.yaml
@@ -88,6 +129,8 @@ Responsabilites :
 - `k3splan` contient le moteur declaratif pur : manifestes, etat observe, planification, actions, runner, journal ;
 - `k3sremote` contient les adaptateurs systeme : SSH, systemd, fichiers distants, commandes k3s ;
 - `k3scli` contient l'interface utilisateur : commandes Typer, affichage Rich, options CLI.
+- `agents/k3sagent` contient l'agent Go deployable sur la machine distante pour les metriques continues ;
+- `proto` contient les contrats Protobuf partages entre Go et Python.
 
 Regle de dependance :
 
@@ -95,9 +138,61 @@ Regle de dependance :
 k3scli -> k3splan + k3sremote
 k3sremote -> k3splan si besoin de types communs
 k3splan -> aucune dependance vers CLI ou SSH
+k3sagent -> contrats proto + bibliotheques Go standard ou internes
+client Python gRPC -> code genere depuis proto
 ```
 
 Le coeur doit rester testable sans machine distante.
+
+## Agent distant Go
+
+L'agent Go est une extension optionnelle destinee aux flux continus, la ou une
+commande SSH ponctuelle est moins adaptee.
+
+Objectifs :
+
+- fournir un binaire unique facile a copier sur la machine distante ;
+- exposer une API gRPC locale, ecoutee sur `127.0.0.1` ;
+- streamer les metriques systeme avec un contrat stable ;
+- eviter d'installer un environnement Python complet sur la machine distante.
+
+Modele de connexion :
+
+```text
+application Python locale
+  -> localhost:50051
+  -> tunnel SSH
+  -> machine distante:127.0.0.1:50051
+  -> agent Go
+```
+
+Le service gRPC ne doit pas etre expose publiquement par defaut. Si la seule
+connexion autorisee est SSH, `k3sctl` ouvre ou documente un tunnel local avant de
+se connecter au service.
+
+Contrat initial envisage :
+
+```proto
+syntax = "proto3";
+
+package k3s.metrics.v1alpha1;
+
+service Metrics {
+  rpc StreamCpu(CpuRequest) returns (stream CpuSample);
+}
+
+message CpuRequest {
+  double interval_seconds = 1;
+}
+
+message CpuSample {
+  double usage_percent = 1;
+  int64 timestamp_ms = 2;
+}
+```
+
+Les fichiers generes Go et Python ne sont pas le contrat source. Le fichier
+`.proto` fait autorite.
 
 ## CLI cible
 
@@ -131,6 +226,70 @@ k3sctl apply examples/single-server.yaml --inventory inventory.local.yaml --from
 k3sctl drift examples/single-server.yaml --inventory inventory.local.yaml
 k3sctl doctor examples/single-server.yaml --inventory inventory.local.yaml
 ```
+
+## Modes CLI
+
+`k3sctl` doit couvrir trois modes d'usage complementaires.
+
+### Mode commande
+
+Le mode commande est le mode CLI explicite actuel. L'utilisateur choisit une
+commande et ses arguments :
+
+```bash
+k3sctl validate examples/single-server.yaml
+k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
+k3sctl plan examples/single-server.yaml --inventory inventory.local.yaml
+k3sctl apply examples/single-server.yaml --inventory inventory.local.yaml
+```
+
+Ce mode privilegie la predictibilite et la composabilite shell.
+
+### Mode CI
+
+Le mode CI est non interactif et stable pour l'automatisation.
+
+Objectifs :
+
+- aucune question interactive ;
+- sorties machine-readable, en particulier JSON ;
+- codes de sortie documentes ;
+- erreurs concises sur `stderr` ;
+- options explicites pour refuser les actions destructives ou imposer un
+  `--dry-run`.
+
+Commandes ciblees :
+
+```bash
+k3sctl ci validate --manifest examples/single-server.yaml
+k3sctl ci inspect --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
+k3sctl ci plan --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
+k3sctl ci drift --manifest examples/single-server.yaml --inventory inventory.local.yaml
+```
+
+### Mode smart
+
+Le mode smart assiste l'utilisateur a partir de l'etat desire et de l'etat
+observe. Il inspecte la machine, construit le plan, puis propose les actions
+pertinentes au lieu d'obliger l'utilisateur a connaitre la prochaine commande.
+
+Exemples d'intentions :
+
+- aucun contexte actif : proposer `context set` ;
+- manifeste invalide : proposer `validate` et afficher les corrections ;
+- SSH indisponible : proposer les checks de connexion ;
+- derive detectee : proposer `plan`, `apply --dry-run`, puis `apply` ;
+- machine saine : proposer `doctor`, `drift` ou surveillance.
+
+Commande cible :
+
+```bash
+k3sctl smart
+k3sctl smart examples/single-server.yaml --inventory inventory.local.yaml
+```
+
+Le mode smart reste explicable : chaque proposition doit indiquer pourquoi elle
+est proposee, son niveau de risque, et la commande concrete equivalente.
 
 ## Contrats du moteur
 
@@ -504,285 +663,6 @@ Risk: medium
 Rollback available: partial
 ```
 
-## Phasage
+## Plan
 
-Statuts :
-
-- ✅ `done` : realise et verifie ;
-- 🟡 `partial` : premiere version disponible, mais contrat incomplet ;
-- ⬜ `todo` : non demarre.
-
-Etat actuel :
-
-```text
-✅ Phase 0  Cadrage du socle
-✅ Phase 1  Manifeste et validation
-✅ Phase 2  Inspection lecture seule
-✅ Phase 3  Planification
-✅ Phase 4  Actions verifiables
-✅ Phase 5  Runner et journal
-✅ Phase 6  k3s present
-✅ Phase 7  k3s absent
-✅ Phase 8  Health et drift
-🟡 Phase 9  Durcissement
-```
-
-### Phase 0 - Cadrage du socle
-
-Statut : ✅ `done`
-
-Objectif : obtenir un depot Python propre avec workspace `uv`.
-
-Actions :
-
-- ✅ creer le `pyproject.toml` racine
-- ✅ configurer le workspace `uv`
-- ✅ creer les paquets `k3splan`, `k3sremote`, `k3scli`
-- ✅ configurer `pytest`, `ruff`, `mypy`
-- ✅ exposer le script `k3sctl`
-- ✅ ajouter `pre-commit` et les hooks Git
-- ✅ ajouter Commitizen pour version, bump et changelog
-
-Definition of done :
-
-- ✅ `uv run k3sctl --help` fonctionne
-- ✅ `uv run pytest` fonctionne
-- ✅ `uv run ruff check .` fonctionne
-- ✅ `uv run mypy packages` fonctionne
-- ✅ `uv run pre-commit run --all-files` fonctionne
-- ✅ `uv run pre-commit run --hook-stage pre-push --all-files` fonctionne
-
-### Phase 1 - Manifeste et validation
-
-Statut : ✅ `done`
-
-Objectif : charger et valider un manifeste `Machine`.
-
-Actions :
-
-- ✅ definir les modeles Pydantic
-- ✅ implementer le chargement YAML
-- ✅ ajouter `examples/single-server.yaml`
-- ✅ ajouter `examples/uninstall.yaml`
-- ✅ ajouter `examples/inventory.example.yaml`
-- ✅ ajouter la commande `k3sctl validate <manifest>`
-- ✅ accepter `spec.connectionRef` pour eviter les connexions reelles dans les manifests publics
-- ✅ ajouter `--inventory` pour valider la resolution de connexion
-- ✅ ignorer `inventory.local.yaml` et `*.local.yaml`
-
-Definition of done :
-
-- ✅ un manifeste valide est accepte
-- ✅ les erreurs de schema sont lisibles
-- ✅ les tests couvrent les champs obligatoires et les valeurs invalides
-- ✅ un manifeste avec `connectionRef` peut etre resolu via inventaire
-- ✅ un manifeste sans source de connexion est refuse
-
-Livrables :
-
-- `packages/k3splan/src/k3splan/manifest.py`
-- `examples/single-server.yaml`
-- `examples/uninstall.yaml`
-- `examples/inventory.example.yaml`
-- `docs/manifest.md`
-
-### Phase 2 - Inspection lecture seule
-
-Statut : ✅ `done`
-
-Objectif : observer une machine distante sans modifier son etat.
-
-Actions :
-
-- ✅ implementer une interface `RemoteExecutor`
-- ✅ ajouter un adaptateur SSH
-- ✅ collecter OS, distribution, version, architecture, systemd, k3s, disque, memoire
-- ✅ collecter l'etat APT : disponibilite, fraicheur des listes et paquets upgradables
-- ✅ collecter les paquets et sysctl declares dans le manifeste
-- ✅ ajouter la commande `k3sctl inspect <manifest>`
-
-Definition of done :
-
-- ✅ l'inspection fonctionne sur une machine accessible en SSH
-- ✅ l'etat observe est serialisable en JSON
-- ✅ les tests unitaires utilisent un faux executor
-
-Regle APT :
-
-- ✅ `apt system up to date` vaut `yes` seulement si les listes APT sont recentes et si aucun paquet n'est upgradable
-
-Ameliorations futures :
-
-- ⬜ ajouter une sortie JSON pour automatisation
-
-### Phase 3 - Planification
-
-Statut : ✅ `done`
-
-Objectif : produire un plan d'actions sans appliquer.
-
-Actions :
-
-- ✅ definir les classes `ObservedState`, `Plan` et `ActionSpec`
-- ✅ implementer le diff `desired + observed -> plan`
-- ✅ ajouter la commande `k3sctl plan <manifest>`
-- ✅ afficher le plan avec `rich`
-
-Definition of done :
-
-- ✅ une machine sans k3s produit un plan d'installation avec etat observe
-- ✅ une machine conforme produit un plan reduit aux actions necessaires
-- ✅ une machine avec derive de version produit une action d'upgrade
-
-Livrables :
-
-- `packages/k3splan/src/k3splan/planner.py`
-- `packages/k3splan/src/k3splan/observed.py`
-
-### Phase 4 - Actions verifiables minimales
-
-Statut : ✅ `done`
-
-Objectif : executer des actions simples et les verifier.
-
-Actions :
-
-- ✅ implementer `EnsurePackagePresent`
-- ✅ implementer `WriteRemoteFile` avec backup
-- ✅ implementer `SetSysctlValue`
-- ✅ definir `precheck`, `snapshot`, `apply`, `verify`, `rollback`
-
-Definition of done :
-
-- ✅ chaque action peut etre testee avec un executor fake
-- ✅ chaque action expose son mode de rollback
-- ✅ une verification echouee est detectee
-
-Livrables :
-
-- `packages/k3splan/src/k3splan/actions.py`
-- `packages/k3sremote/src/k3sremote/actions.py`
-
-### Phase 5 - Runner transactionnel et journal
-
-Statut : ✅ `done`
-
-Objectif : executer un plan avec journalisation et rollback.
-
-Actions :
-
-- ✅ implementer le `Runner`
-- ✅ ecrire un journal local par `run_id`
-- ✅ enregistrer snapshots, statuts et erreurs
-- ✅ executer le rollback en ordre inverse
-- ✅ ajouter `k3sctl apply <manifest>`
-
-Definition of done :
-
-- ✅ une action echouee stoppe l'execution
-- ✅ les actions deja appliquees sont rollbackees si possible
-- ✅ `k3sctl journal list` liste les executions
-- ⬜ `k3sctl rollback --run-id <run-id>` fonctionne pour les actions rollbackables
-
-Livrables :
-
-- `packages/k3splan/src/k3splan/runner.py`
-- `packages/k3splan/src/k3splan/journal.py`
-- `packages/k3sremote/src/k3sremote/builder.py`
-
-### Phase 6 - k3s present
-
-Statut : ✅ `done`
-
-Objectif : installer et demarrer k3s declarativement.
-
-Actions :
-
-- ✅ implementer `InstallK3s`
-- ✅ implementer `WriteK3sConfig` (via `WriteRemoteFile`)
-- ✅ implementer `SystemdServiceEnable`
-- ✅ implementer `SystemdServiceStart`
-- ✅ implementer `WaitK3sNodeReady`
-- ✅ implementer `FetchKubeconfig`
-
-Definition of done :
-
-- ✅ `k3sctl plan` annonce les actions d'installation
-- ✅ `k3sctl apply` execute le plan complet via le runner transactionnel
-- ⬜ `k3sctl verify` confirme service running, version attendue et node ready (Phase 8)
-
-Livrables :
-
-- `packages/k3sremote/src/k3sremote/actions.py` (InstallK3s, SystemdServiceEnable, SystemdServiceStart, WaitK3sNodeReady, FetchKubeconfig)
-- `packages/k3sremote/src/k3sremote/builder.py` (actions k3s cablees)
-
-### Phase 7 - k3s absent
-
-Statut : ✅ `done`
-
-Objectif : desinstaller k3s proprement.
-
-Actions :
-
-- ✅ implementer `UninstallK3s`
-- ✅ gerer `removeData` (script complet ou suppression selective)
-- ✅ gerer `removeKubeconfig` (suppression du kubeconfig local)
-- ✅ verifier absence du binaire k3s apres desinstallation
-
-Definition of done :
-
-- ✅ `state: absent` produit un plan de desinstallation
-- ⬜ la desinstallation est bloquee ou confirmee si elle est destructive (Phase 9)
-- ✅ la verification confirme l'absence attendue
-
-Livrables :
-
-- `packages/k3sremote/src/k3sremote/actions.py` (UninstallK3s)
-- `packages/k3sremote/src/k3sremote/builder.py` (k3s.uninstall cable)
-
-### Phase 8 - Health et drift
-
-Statut : ✅ `done`
-
-Objectif : rendre l'outil utile au quotidien.
-
-Actions :
-
-- ✅ ajouter `k3sctl doctor <manifest>`
-- ✅ ajouter `k3sctl drift <manifest>`
-- ✅ structurer les checks de sante
-- ✅ afficher un verdict clair : `healthy`, `degraded`, `unhealthy`
-
-Definition of done :
-
-- ✅ le rapport distingue sante systeme, sante k3s et derive declarative
-- ✅ les seuils du manifeste sont appliques (diskFreePercent, memoryFreeMiB)
-- ✅ drift affiche les actions necessaires et retourne exit code 1 si derive detectee
-
-Livrables :
-
-- `packages/k3splan/src/k3splan/health.py`
-
-### Phase 9 - Durcissement
-
-Statut : 🟡 `partial`
-
-Objectif : rendre le projet robuste avant usage reel.
-
-Actions :
-
-- ⬜ ajouter tests d'integration sur VM ou container systemd si possible
-- ✅ documenter les limites de rollback
-- ✅ documenter les risques d'upgrade k3s
-- ✅ ajouter mode `--dry-run` sur `k3sctl apply`
-- ✅ ajouter confirmations pour actions a risque eleve
-- ⬜ stabiliser le schema `v1alpha1`
-- ✅ documenter la separation manifeste public / inventaire prive
-- ✅ ajouter hooks qualite locaux
-- ✅ ajouter workflow de release local
-
-Definition of done :
-
-- ✅ la documentation couvre installation, desinstallation, rollback et limites
-- ✅ les commandes critiques ont des tests
-- ✅ les erreurs CLI sont comprehensibles et actionnables
+Le phasage du projet est suivi dans [Plan](plan.md).

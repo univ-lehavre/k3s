@@ -1,0 +1,139 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Commitizen bump increment
+        required: false
+        default: auto
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Bump, build, publish
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(release):')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure release branch
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Release workflow must run from main."
+            exit 1
+          fi
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Install Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: agents/k3sagent/go.mod
+          cache-dependency-path: agents/k3sagent/go.mod
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install dependencies
+        run: uv sync --all-packages --dev --frozen
+
+      - name: Check format
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run mypy packages
+
+      - name: Test
+        run: uv run pytest
+
+      - name: Test Go agent
+        working-directory: agents/k3sagent
+        run: go test ./...
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: |
+          bump="${{ inputs.bump }}"
+          if [ -z "$bump" ] || [ "$bump" = "auto" ]; then
+            uv run cz bump --yes --allow-no-commit
+          else
+            uv run cz bump --yes --increment "$bump"
+          fi
+
+      - name: Read version
+        id: version
+        run: |
+          version=$(uv run python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Push bump and tag
+        run: |
+          git push origin HEAD:main
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Build distributions
+        run: uv build --all-packages --out-dir dist --clear --no-create-gitignore
+
+      - name: Build Go agent
+        working-directory: agents/k3sagent
+        run: go build -o ../../dist/k3sagent ./cmd/k3sagent
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Go agent image to GitHub Packages
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: agents/k3sagent/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/k3sagent:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/k3sagent:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          files: dist/*
+          generate_release_notes: true

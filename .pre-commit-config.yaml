@@ -1,6 +1,19 @@
 repos:
   - repo: local
     hooks:
+      - id: require-work-branch
+        name: require work branch
+        entry: >-
+          bash -c 'branch=$(git symbolic-ref --quiet --short HEAD || true);
+          if [ -z "$branch" ] || [ "$branch" = "main" ] || [ "$branch" = "master" ];
+          then echo "Commit refuse: creez une branche de travail avant de committer.";
+          echo "Exemple: git switch -c feat/ma-branche";
+          exit 1;
+          fi'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
       - id: ruff-format-check
         name: ruff format
         entry: uv run ruff format --check .
@@ -28,6 +41,17 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-push]
+
+      - id: forbid-email-in-commit-message
+        name: forbid email in commit message
+        entry: >-
+          bash -c 'if grep -Eiq
+          "[[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,}" "$1";
+          then echo "Commit refuse: ne mettez pas de courriel dans le message de commit.";
+          exit 1;
+          fi' --
+        language: system
+        stages: [commit-msg]
 
       - id: commitizen
         name: commitizen

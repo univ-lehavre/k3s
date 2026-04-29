@@ -4,6 +4,17 @@ Les manifestes k3sctl decrivent l'etat attendu d'une machine. Ils peuvent etre v
 
 Les informations de connexion sont separees dans un inventaire local.
 
+## Table des matieres
+
+- [Principe](#principe)
+- [Fichiers](#fichiers)
+- [Validation](#validation)
+- [Regle de schema](#regle-de-schema)
+- [Manifest d'installation](#manifest-dinstallation)
+- [Manifest de desinstallation](#manifest-de-desinstallation)
+- [Inventaire](#inventaire)
+- [Securite](#securite)
+
 ## Principe
 
 Un manifeste public contient une reference :

@@ -3,6 +3,29 @@
 Outil declaratif experimental pour inspecter, planifier et reconciler l'etat k3s
 d'une machine distante.
 
+## Architecture
+
+Le depot est un monorepo pilote principalement par Python et `uv` :
+
+- `packages/k3splan` contient le moteur declaratif ;
+- `packages/k3sremote` contient les adaptateurs distants, notamment SSH ;
+- `packages/k3scli` expose le CLI `k3sctl`.
+
+Le CLI doit couvrir trois usages : un mode commande explicite, un mode CI
+non interactif avec sorties stables, et un mode smart qui observe l'etat actuel,
+compare avec l'etat desire et propose les prochaines actions possibles.
+
+Le choix retenu pour les metriques continues est de garder l'application et le
+CLI en Python, et d'ajouter si besoin un agent distant en Go dans le meme
+monorepo. L'agent vivrait dans `agents/k3sagent`, exposerait une API gRPC locale
+sur la machine distante, et partagerait ses contrats Protobuf avec le client
+Python.
+
+Ce modele permet de deployer un binaire Go simple sur la machine distante tout en
+gardant l'orchestration, les manifests et l'experience CLI dans Python. Si la
+seule connexion disponible est SSH, le client Python accede a l'agent via un
+tunnel SSH vers `127.0.0.1` sur la machine distante.
+
 ## Developpement
 
 Installer l'environnement :
@@ -70,6 +93,15 @@ uv run mypy packages
 uv run pytest
 ```
 
+Verifier l'agent Go :
+
+```bash
+cd agents/k3sagent
+go test ./...
+go build ./cmd/k3sagent
+./k3sagent --samples 1
+```
+
 Installer les hooks Git :
 
 ```bash
@@ -92,8 +124,16 @@ uv run cz bump --dry-run --yes
 uv run cz bump
 ```
 
+Les checks GitHub lancent format, lint, typage, tests et builds sur les pull
+requests et sur `main`. La release est automatique apres merge sur `main` :
+Commitizen bump la version, met a jour `CHANGELOG.md`, publie l'image de l'agent
+sur GitHub Packages via GHCR et cree la GitHub Release avec les distributions
+Python en artefacts.
+
 ## Documentation
 
-- [Architecture et phasage](docs/architecture.md)
+- [Instructions pour agents IA](AGENTS.md)
+- [Architecture](docs/architecture.md)
+- [Plan](docs/plan.md)
 - [Manifestes et inventaires](docs/manifest.md)
 - [Release](docs/release.md)

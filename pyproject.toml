@@ -58,6 +58,7 @@ mypy_path = [
 name = "cz_conventional_commits"
 version = "0.1.0"
 tag_format = "v$version"
+bump_message = "chore(release): v$current_version to v$new_version"
 update_changelog_on_bump = true
 major_version_zero = true
 version_files = [
