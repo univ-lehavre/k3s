@@ -531,7 +531,7 @@ wheels = [
 
 [[package]]
 name = "k3s-workspace"
-version = "0.1.0"
+version = "0.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "k3scli" },
@@ -562,7 +562,7 @@ dev = [
 
 [[package]]
 name = "k3scli"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/k3scli" }
 dependencies = [
     { name = "k3splan" },
@@ -581,7 +581,7 @@ requires-dist = [
 
 [[package]]
 name = "k3splan"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/k3splan" }
 dependencies = [
     { name = "pydantic" },
@@ -596,7 +596,7 @@ requires-dist = [
 
 [[package]]
 name = "k3sremote"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "packages/k3sremote" }
 dependencies = [
     { name = "fabric" },

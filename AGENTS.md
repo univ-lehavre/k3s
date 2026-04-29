@@ -38,6 +38,9 @@ desired state -> observed state -> plan -> action -> verify -> commit/rollback
 - Ne jamais ajouter de courriel dans un message de commit. Ne pas utiliser de
   `Co-authored-by`, `Signed-off-by`, trailers, corps de commit ou exemples qui
   contiennent une adresse courriel.
+- Ne jamais ajouter de marque ou nom d'outil IA dans les metadonnees de
+  contribution : titres de PR, corps de PR, messages de commit, trailers ou
+  prefixes. En particulier, ne pas utiliser de prefixe comme `[codex]`.
 - Ne pas versionner de secrets, d'adresses internes, de kubeconfigs ou
   d'inventaires locaux.
 - Garder `k3splan` independant de SSH, du CLI et des effets de bord systeme.
@@ -92,6 +95,10 @@ uv run pre-commit install --hook-type commit-msg
   detache.
 - Le hook `commit-msg` refuse les messages contenant une adresse courriel avant
   la verification Commitizen.
+- Le hook `commit-msg` refuse aussi les marques/outils IA dans les messages de
+  commit via `scripts/check_metadata.py`.
+- Le workflow `.github/workflows/metadata.yml` applique la meme regle aux titres
+  de PR, corps de PR et messages de commits de la PR.
 - Les checks GitHub doivent rester alignes avec les commandes locales :
   `ruff format --check`, `ruff check`, `mypy packages` et `pytest`.
 - Les checks Go doivent rester alignes avec `go test ./...` et

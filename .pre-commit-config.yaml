@@ -53,6 +53,12 @@ repos:
         language: system
         stages: [commit-msg]
 
+      - id: forbid-branded-commit-message
+        name: forbid branded commit message
+        entry: python3 scripts/check_metadata.py --label commit-message
+        language: system
+        stages: [commit-msg]
+
       - id: commitizen
         name: commitizen
         entry: uv run cz check --commit-msg-file

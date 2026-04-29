@@ -59,6 +59,9 @@ BREAKING: major
 Tant que le projet reste en `0.x`, `major_version_zero = true` limite les bumps
 majeurs automatiques.
 
+Les messages de commit ne doivent pas contenir de courriel, de marque ou de nom
+d'outil IA. La meme regle s'applique aux titres et corps de PR.
+
 ## Checks GitHub
 
 Le workflow `.github/workflows/checks.yml` s'execute sur :
