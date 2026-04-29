@@ -286,7 +286,7 @@ Objectif : rendre le projet robuste avant usage reel.
 
 Actions :
 
-- ⬜ ajouter tests d'integration sur VM ou container systemd si possible
+- ✅ ajouter tests d'integration sur VM ou container systemd si possible
 - ✅ documenter les limites de rollback
 - ✅ documenter les risques d'upgrade k3s
 - ✅ ajouter mode `--dry-run` sur `pilot apply`
