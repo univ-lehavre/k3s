@@ -1,7 +1,10 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from k3splan.actions import Action
 from k3splan.journal import Journal
+
+ProgressCallback = Callable[[str, str], None]  # (action_id, message)
 
 
 @dataclass
@@ -13,14 +16,16 @@ class RunResult:
 
 
 class Runner:
-    def __init__(self, journal: Journal) -> None:
+    def __init__(self, journal: Journal, on_progress: ProgressCallback | None = None) -> None:
         self._journal = journal
+        self._on_progress = on_progress or (lambda _id, _msg: None)
 
     def run(self, target: str, actions: list[Action]) -> RunResult:
         self._journal.start_run(target)
         applied: list[tuple[Action, object]] = []
 
         for action in actions:
+            self._on_progress(action.id, f"running  {action.description}")
             try:
                 action.precheck()
             except Exception as exc:
@@ -65,6 +70,7 @@ class Runner:
                     error=error,
                 )
 
+            self._on_progress(action.id, f"done     {action.description}")
             self._journal.record_committed(action.id)
             applied.append((action, snapshot))
 

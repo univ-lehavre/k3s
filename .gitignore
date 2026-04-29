@@ -9,3 +9,4 @@ inventory.local.yaml
 *.local.yaml
 .k3sctl.yaml
 .claude/
+.k3sctl/
