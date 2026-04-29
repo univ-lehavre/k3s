@@ -172,7 +172,12 @@ class InstallK3s(Action):
             env = f"INSTALL_K3S_VERSION={shlex.quote(self._version)}"
         else:
             env = f"INSTALL_K3S_CHANNEL={shlex.quote(self._channel)}"
-        self._executor.run(f"curl -sfL https://get.k3s.io | sudo {env} sh -", stream=True)
+        # INSTALL_K3S_SKIP_START=true prevents the script from blocking on systemctl start;
+        # SystemdServiceStart handles the start separately with --no-block.
+        self._executor.run(
+            f"curl -sfL https://get.k3s.io | sudo {env} INSTALL_K3S_SKIP_START=true sh -",
+            stream=True,
+        )
 
     def verify(self) -> bool:
         return self._executor.run("command -v k3s").ok
