@@ -1,4 +1,4 @@
-# Instructions pour agents IA
+# Contribuer
 
 Ce fichier donne le contexte minimal pour travailler dans ce depot sans casser
 les conventions locales.
