@@ -291,13 +291,11 @@ class WaitK3sNodeReady(Action):
             )
             if node_status.ok and "Ready" in node_status.stdout:
                 return
-            if node_status.ok and node_status.stdout.strip():
-                self._executor.run(f"echo 'node status: {node_status.stdout.strip()}'", stream=True)
-            else:
-                self._executor.run(
-                    "journalctl -u k3s -n 3 --no-pager --output=cat 2>/dev/null || true",
-                    stream=True,
-                )
+            # systemctl status always produces output regardless of the service state
+            self._executor.run(
+                "systemctl status k3s --no-pager -l --lines=5 2>&1 || true",
+                stream=True,
+            )
             time.sleep(5)
         raise TimeoutError(f"k3s node {self._node!r} not ready after {self._timeout}s")
 
