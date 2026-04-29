@@ -1,6 +1,6 @@
 [project]
 name = "pilotremote"
-version = "0.4.1"
+version = "0.5.0"
 description = "Remote execution adapters for pilot"
 requires-python = ">=3.12"
 dependencies = [

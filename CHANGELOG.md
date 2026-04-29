@@ -5,6 +5,17 @@ Tous les changements notables de ce projet seront documentes ici.
 Le format s'appuie sur les Conventional Commits et le changelog est genere par
 Commitizen lors des bumps de version.
 
+## v0.5.0 (2026-04-29)
+
+### Feat
+
+- add integration tests against systemd container, nightly workflow
+
+### Fix
+
+- run apt-get update before apt-get install in EnsurePackagePresent
+- prefix privileged commands with sudo in remote actions
+
 ## v0.4.1 (2026-04-29)
 
 ## v0.4.0 (2026-04-29)
