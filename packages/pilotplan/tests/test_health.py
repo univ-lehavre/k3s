@@ -23,7 +23,7 @@ def test_healthy_machine() -> None:
         ),
         k3s=K3sState(
             installed=True,
-            version="k3s version v1.35.3+k3s1",
+            version="k3s version v1.35.4+k3s1",
             serviceActive=True,
             serviceEnabled=True,
         ),
