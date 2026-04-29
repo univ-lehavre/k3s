@@ -1,4 +1,4 @@
-# k3sctl - Architecture
+# k3sp - Architecture
 
 ## Table des matieres
 
@@ -63,7 +63,7 @@ Extension pour les metriques continues :
   l'agent distant.
 
 Cette extension reste dans le meme monorepo tant que l'agent est pilote par
-`k3sctl` et evolue avec son client Python. Un depot separe ne devient preferable
+`k3sp` et evolue avec son client Python. Un depot separe ne devient preferable
 que si l'agent obtient son propre cycle de release, plusieurs consommateurs
 independants, ou une compatibilite inter-versions longue duree.
 
@@ -80,8 +80,8 @@ k3s/
   README.md
 
   packages/
-    k3splan/
-      src/k3splan/
+    pilotplan/
+      src/pilotplan/
         desired.py
         observed.py
         planner.py
@@ -90,29 +90,29 @@ k3s/
         journal.py
       tests/
 
-    k3sremote/
-      src/k3sremote/
+    pilotremote/
+      src/pilotremote/
         ssh.py
         systemd.py
         files.py
         packages.py
       tests/
 
-    k3scli/
-      src/k3scli/
+    pilotcli/
+      src/pilotcli/
         app.py
         commands/
       tests/
 
   agents/
-    k3sagent/
+    pilotagent/
       go.mod
-      cmd/k3sagent/
+      cmd/pilotagent/
         main.go
       internal/
 
   proto/
-    k3smetrics.proto
+    pilotmetrics.proto
 
   examples/
     single-server.yaml
@@ -126,19 +126,19 @@ k3s/
 
 Responsabilites :
 
-- `k3splan` contient le moteur declaratif pur : manifestes, etat observe, planification, actions, runner, journal ;
-- `k3sremote` contient les adaptateurs systeme : SSH, systemd, fichiers distants, commandes k3s ;
-- `k3scli` contient l'interface utilisateur : commandes Typer, affichage Rich, options CLI.
-- `agents/k3sagent` contient l'agent Go deployable sur la machine distante pour les metriques continues ;
+- `pilotplan` contient le moteur declaratif pur : manifestes, etat observe, planification, actions, runner, journal ;
+- `pilotremote` contient les adaptateurs systeme : SSH, systemd, fichiers distants, commandes k3s ;
+- `pilotcli` contient l'interface utilisateur : commandes Typer, affichage Rich, options CLI.
+- `agents/pilotagent` contient l'agent Go deployable sur la machine distante pour les metriques continues ;
 - `proto` contient les contrats Protobuf partages entre Go et Python.
 
 Regle de dependance :
 
 ```text
-k3scli -> k3splan + k3sremote
-k3sremote -> k3splan si besoin de types communs
-k3splan -> aucune dependance vers CLI ou SSH
-k3sagent -> contrats proto + bibliotheques Go standard ou internes
+pilotcli -> pilotplan + pilotremote
+pilotremote -> pilotplan si besoin de types communs
+pilotplan -> aucune dependance vers CLI ou SSH
+pilotagent -> contrats proto + bibliotheques Go standard ou internes
 client Python gRPC -> code genere depuis proto
 ```
 
@@ -167,7 +167,7 @@ application Python locale
 ```
 
 Le service gRPC ne doit pas etre expose publiquement par defaut. Si la seule
-connexion autorisee est SSH, `k3sctl` ouvre ou documente un tunnel local avant de
+connexion autorisee est SSH, `k3sp` ouvre ou documente un tunnel local avant de
 se connecter au service.
 
 Contrat initial envisage :
@@ -196,40 +196,40 @@ Les fichiers generes Go et Python ne sont pas le contrat source. Le fichier
 
 ## CLI cible
 
-Le binaire s'appelle `k3sctl`.
+Le binaire s'appelle `k3sp`.
 
 Gestion des contextes :
 
 ```bash
-k3sctl context set <name> <manifest> <inventory>
-k3sctl context use <name>
-k3sctl context list
-k3sctl context show
+k3sp context set <name> <manifest> <inventory>
+k3sp context use <name>
+k3sp context list
+k3sp context show
 ```
 
 Commandes initiales :
 
 ```bash
-k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
-k3sctl plan examples/single-server.yaml
-k3sctl apply examples/single-server.yaml
-k3sctl verify examples/single-server.yaml
-k3sctl rollback --run-id <run-id>
-k3sctl journal
+k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
+k3sp plan examples/single-server.yaml
+k3sp apply examples/single-server.yaml
+k3sp verify examples/single-server.yaml
+k3sp rollback --run-id <run-id>
+k3sp journal
 ```
 
 Commandes utiles ensuite :
 
 ```bash
-k3sctl apply examples/single-server.yaml --inventory inventory.local.yaml --step
-k3sctl apply examples/single-server.yaml --inventory inventory.local.yaml --from action.install-k3s
-k3sctl drift examples/single-server.yaml --inventory inventory.local.yaml
-k3sctl doctor examples/single-server.yaml --inventory inventory.local.yaml
+k3sp apply examples/single-server.yaml --inventory inventory.local.yaml --step
+k3sp apply examples/single-server.yaml --inventory inventory.local.yaml --from action.install-k3s
+k3sp drift examples/single-server.yaml --inventory inventory.local.yaml
+k3sp doctor examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 ## Modes CLI
 
-`k3sctl` doit couvrir trois modes d'usage complementaires.
+`k3sp` doit couvrir trois modes d'usage complementaires.
 
 ### Mode commande
 
@@ -237,10 +237,10 @@ Le mode commande est le mode CLI explicite actuel. L'utilisateur choisit une
 commande et ses arguments :
 
 ```bash
-k3sctl validate examples/single-server.yaml
-k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
-k3sctl plan examples/single-server.yaml --inventory inventory.local.yaml
-k3sctl apply examples/single-server.yaml --inventory inventory.local.yaml
+k3sp validate examples/single-server.yaml
+k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
+k3sp plan examples/single-server.yaml --inventory inventory.local.yaml
+k3sp apply examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Ce mode privilegie la predictibilite et la composabilite shell.
@@ -261,10 +261,10 @@ Objectifs :
 Commandes ciblees :
 
 ```bash
-k3sctl ci validate --manifest examples/single-server.yaml
-k3sctl ci inspect --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
-k3sctl ci plan --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
-k3sctl ci drift --manifest examples/single-server.yaml --inventory inventory.local.yaml
+k3sp ci validate --manifest examples/single-server.yaml
+k3sp ci inspect --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
+k3sp ci plan --manifest examples/single-server.yaml --inventory inventory.local.yaml --output json
+k3sp ci drift --manifest examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 ### Mode smart
@@ -284,8 +284,8 @@ Exemples d'intentions :
 Commande cible :
 
 ```bash
-k3sctl smart
-k3sctl smart examples/single-server.yaml --inventory inventory.local.yaml
+k3sp smart
+k3sp smart examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Le mode smart reste explicable : chaque proposition doit indiquer pourquoi elle
@@ -474,12 +474,12 @@ L'upgrade k3s (`k3s.upgrade`) porte un risque eleve pour les raisons suivantes :
 - Le rollback (`compensating`) reinstalle l'ancienne version mais ne garantit pas la restauration de l'etat etcd si des migrations de schema ont eu lieu.
 - En cas d'echec de verification post-upgrade, le rollback peut lui-meme echouer si le script d'installation ne trouve plus la version anterieure dans le canal stable.
 
-Recommandation : toujours tester un upgrade sur un noeud de staging avant production, et utiliser `k3sctl plan --dry-run` pour verifier les actions prevues.
+Recommandation : toujours tester un upgrade sur un noeud de staging avant production, et utiliser `k3sp plan --dry-run` pour verifier les actions prevues.
 
 ## Manifeste d'installation
 
 ```yaml
-apiVersion: k3sctl.dev/v1alpha1
+apiVersion: k3s-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -561,14 +561,14 @@ spec:
 
     journal:
       location: local
-      path: .k3sctl/runs
+      path: .k3sp/runs
       keep: 20
 ```
 
 ## Manifeste de desinstallation
 
 ```yaml
-apiVersion: k3sctl.dev/v1alpha1
+apiVersion: k3s-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -605,7 +605,7 @@ reelles. Ils referencent une entree d'inventaire via `spec.connectionRef`.
 Exemple versionnable :
 
 ```yaml
-apiVersion: k3sctl.dev/v1alpha1
+apiVersion: k3s-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -639,7 +639,7 @@ Convention :
 Commande cible :
 
 ```bash
-k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
+k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 ## Exemple de plan

@@ -1,24 +1,24 @@
 [project]
-name = "k3s-workspace"
+name = "k3s-pilot"
 version = "0.2.0"
 description = "Declarative k3s machine reconciler workspace"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "k3scli",
+    "pilotcli",
 ]
 
 [tool.uv.workspace]
 members = [
-    "packages/k3splan",
-    "packages/k3sremote",
-    "packages/k3scli",
+    "packages/pilotplan",
+    "packages/pilotremote",
+    "packages/pilotcli",
 ]
 
 [tool.uv.sources]
-k3splan = { workspace = true }
-k3sremote = { workspace = true }
-k3scli = { workspace = true }
+pilotplan = { workspace = true }
+pilotremote = { workspace = true }
+pilotcli = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -49,9 +49,9 @@ python_files = ["test_*.py", "*_test.py"]
 python_version = "3.12"
 strict = true
 mypy_path = [
-    "packages/k3splan/src",
-    "packages/k3sremote/src",
-    "packages/k3scli/src",
+    "packages/pilotplan/src",
+    "packages/pilotremote/src",
+    "packages/pilotcli/src",
 ]
 
 [tool.commitizen]
@@ -63,7 +63,7 @@ update_changelog_on_bump = true
 major_version_zero = true
 version_files = [
     "pyproject.toml:version",
-    "packages/k3splan/pyproject.toml:version",
-    "packages/k3sremote/pyproject.toml:version",
-    "packages/k3scli/pyproject.toml:version",
+    "packages/pilotplan/pyproject.toml:version",
+    "packages/pilotremote/pyproject.toml:version",
+    "packages/pilotcli/pyproject.toml:version",
 ]

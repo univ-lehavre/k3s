@@ -5,7 +5,7 @@ les conventions locales.
 
 ## Contexte projet
 
-`k3sctl` est un outil declaratif experimental pour inspecter, planifier et
+`k3sp` est un outil declaratif experimental pour inspecter, planifier et
 reconcilier l'etat k3s d'une machine distante.
 
 Le modele mental est :
@@ -16,17 +16,17 @@ desired state -> observed state -> plan -> action -> verify -> commit/rollback
 
 ## Structure
 
-- `packages/k3splan` : moteur declaratif pur, modeles, planification, runner,
+- `packages/pilotplan` : moteur declaratif pur, modeles, planification, runner,
   journal et sante.
-- `packages/k3sremote` : adaptateurs systeme et execution distante, notamment
+- `packages/pilotremote` : adaptateurs systeme et execution distante, notamment
   SSH.
-- `packages/k3scli` : CLI `k3sctl`, commandes Typer et affichage Rich.
+- `packages/pilotcli` : CLI `k3sp`, commandes Typer et affichage Rich.
 - `docs/architecture.md` : architecture cible.
 - `docs/plan.md` : phasage du projet.
 - `docs/manifest.md` : manifestes et inventaires.
 - `docs/release.md` : versionnement et release.
-- `agents/k3sagent` : agent Go experimental pour les metriques continues.
-- `proto/k3smetrics.proto` : contrat Protobuf source pour les futurs flux gRPC.
+- `agents/pilotagent` : agent Go experimental pour les metriques continues.
+- `proto/pilotmetrics.proto` : contrat Protobuf source pour les futurs flux gRPC.
 - `.github/workflows/checks.yml` : checks GitHub Actions.
 - `.github/workflows/release.yml` : release automatique sur `main`, bump,
   changelog, publication GHCR et GitHub Release.
@@ -42,7 +42,7 @@ desired state -> observed state -> plan -> action -> verify -> commit/rollback
   titres de PR, corps de PR, messages de commit, trailers ou prefixes.
 - Ne pas versionner de secrets, d'adresses internes, de kubeconfigs ou
   d'inventaires locaux.
-- Garder `k3splan` independant de SSH, du CLI et des effets de bord systeme.
+- Garder `pilotplan` independant de SSH, du CLI et des effets de bord systeme.
 - Respecter les trois modes cibles du CLI : commande explicite, CI non
   interactif et smart assiste par `desired + observed`.
 - Preferer des changements scopes, alignes avec les patterns existants.
@@ -70,10 +70,10 @@ uv run pytest
 Lancer le CLI :
 
 ```bash
-uv run k3sctl --help
-uv run k3sctl validate examples/single-server.yaml
-uv run k3sctl plan examples/single-server.yaml
-uv run k3sctl inspect examples/single-server.yaml --inventory inventory.local.yaml
+uv run k3sp --help
+uv run k3sp validate examples/single-server.yaml
+uv run k3sp plan examples/single-server.yaml
+uv run k3sp inspect examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Installer les hooks :
@@ -101,7 +101,7 @@ uv run pre-commit install --hook-type commit-msg
 - Les checks GitHub doivent rester alignes avec les commandes locales :
   `ruff format --check`, `ruff check`, `mypy packages` et `pytest`.
 - Les checks Go doivent rester alignes avec `go test ./...` et
-  `go build ./cmd/k3sagent` depuis `agents/k3sagent`.
+  `go build ./cmd/pilotagent` depuis `agents/pilotagent`.
 - Le workflow de release se lance automatiquement sur `main` et ignore les
   commits `chore(release):` pour eviter une boucle.
 - GitHub Packages ne supporte pas de registre PyPI. Publier l'agent Go comme
@@ -116,7 +116,7 @@ par Git.
 Pour les exemples publics, utiliser :
 
 ```bash
-uv run k3sctl validate examples/single-server.yaml --inventory examples/inventory.example.yaml
+uv run k3sp validate examples/single-server.yaml --inventory examples/inventory.example.yaml
 ```
 
 ## Style documentaire

@@ -1,0 +1,23 @@
+[project]
+name = "pilotcli"
+version = "0.2.0"
+description = "Command line interface for k3sp"
+requires-python = ">=3.12"
+dependencies = [
+    "pilotplan",
+    "pilotremote",
+    "rich>=14.0.0",
+    "typer>=0.16.0",
+]
+
+[project.scripts]
+k3sp = "pilotcli.app:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+pilotplan = { workspace = true }
+pilotremote = { workspace = true }
+

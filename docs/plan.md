@@ -1,6 +1,6 @@
 # Plan
 
-Ce document suit le phasage du projet `k3sctl`.
+Ce document suit le phasage du projet `k3sp`.
 
 ## Table des matieres
 
@@ -52,15 +52,15 @@ Actions :
 
 - ✅ creer le `pyproject.toml` racine
 - ✅ configurer le workspace `uv`
-- ✅ creer les paquets `k3splan`, `k3sremote`, `k3scli`
+- ✅ creer les paquets `pilotplan`, `pilotremote`, `pilotcli`
 - ✅ configurer `pytest`, `ruff`, `mypy`
-- ✅ exposer le script `k3sctl`
+- ✅ exposer le script `k3sp`
 - ✅ ajouter `pre-commit` et les hooks Git
 - ✅ ajouter Commitizen pour version, bump et changelog
 
 Definition of done :
 
-- ✅ `uv run k3sctl --help` fonctionne
+- ✅ `uv run k3sp --help` fonctionne
 - ✅ `uv run pytest` fonctionne
 - ✅ `uv run ruff check .` fonctionne
 - ✅ `uv run mypy packages` fonctionne
@@ -80,7 +80,7 @@ Actions :
 - ✅ ajouter `examples/single-server.yaml`
 - ✅ ajouter `examples/uninstall.yaml`
 - ✅ ajouter `examples/inventory.example.yaml`
-- ✅ ajouter la commande `k3sctl validate <manifest>`
+- ✅ ajouter la commande `k3sp validate <manifest>`
 - ✅ accepter `spec.connectionRef` pour eviter les connexions reelles dans les manifests publics
 - ✅ ajouter `--inventory` pour valider la resolution de connexion
 - ✅ ignorer `inventory.local.yaml` et `*.local.yaml`
@@ -95,7 +95,7 @@ Definition of done :
 
 Livrables :
 
-- `packages/k3splan/src/k3splan/manifest.py`
+- `packages/pilotplan/src/pilotplan/manifest.py`
 - `examples/single-server.yaml`
 - `examples/uninstall.yaml`
 - `examples/inventory.example.yaml`
@@ -114,7 +114,7 @@ Actions :
 - ✅ collecter OS, distribution, version, architecture, systemd, k3s, disque, memoire
 - ✅ collecter l'etat APT : disponibilite, fraicheur des listes et paquets upgradables
 - ✅ collecter les paquets et sysctl declares dans le manifeste
-- ✅ ajouter la commande `k3sctl inspect <manifest>`
+- ✅ ajouter la commande `k3sp inspect <manifest>`
 
 Definition of done :
 
@@ -140,7 +140,7 @@ Actions :
 
 - ✅ definir les classes `ObservedState`, `Plan` et `ActionSpec`
 - ✅ implementer le diff `desired + observed -> plan`
-- ✅ ajouter la commande `k3sctl plan <manifest>`
+- ✅ ajouter la commande `k3sp plan <manifest>`
 - ✅ afficher le plan avec `rich`
 
 Definition of done :
@@ -151,8 +151,8 @@ Definition of done :
 
 Livrables :
 
-- `packages/k3splan/src/k3splan/planner.py`
-- `packages/k3splan/src/k3splan/observed.py`
+- `packages/pilotplan/src/pilotplan/planner.py`
+- `packages/pilotplan/src/pilotplan/observed.py`
 
 ## Phase 4 - Actions verifiables minimales
 
@@ -175,8 +175,8 @@ Definition of done :
 
 Livrables :
 
-- `packages/k3splan/src/k3splan/actions.py`
-- `packages/k3sremote/src/k3sremote/actions.py`
+- `packages/pilotplan/src/pilotplan/actions.py`
+- `packages/pilotremote/src/pilotremote/actions.py`
 
 ## Phase 5 - Runner transactionnel et journal
 
@@ -190,20 +190,20 @@ Actions :
 - ✅ ecrire un journal local par `run_id`
 - ✅ enregistrer snapshots, statuts et erreurs
 - ✅ executer le rollback en ordre inverse
-- ✅ ajouter `k3sctl apply <manifest>`
+- ✅ ajouter `k3sp apply <manifest>`
 
 Definition of done :
 
 - ✅ une action echouee stoppe l'execution
 - ✅ les actions deja appliquees sont rollbackees si possible
-- ✅ `k3sctl journal list` liste les executions
-- ⬜ `k3sctl rollback --run-id <run-id>` fonctionne pour les actions rollbackables
+- ✅ `k3sp journal list` liste les executions
+- ⬜ `k3sp rollback --run-id <run-id>` fonctionne pour les actions rollbackables
 
 Livrables :
 
-- `packages/k3splan/src/k3splan/runner.py`
-- `packages/k3splan/src/k3splan/journal.py`
-- `packages/k3sremote/src/k3sremote/builder.py`
+- `packages/pilotplan/src/pilotplan/runner.py`
+- `packages/pilotplan/src/pilotplan/journal.py`
+- `packages/pilotremote/src/pilotremote/builder.py`
 
 ## Phase 6 - k3s present
 
@@ -222,14 +222,14 @@ Actions :
 
 Definition of done :
 
-- ✅ `k3sctl plan` annonce les actions d'installation
-- ✅ `k3sctl apply` execute le plan complet via le runner transactionnel
-- ⬜ `k3sctl verify` confirme service running, version attendue et node ready (Phase 8)
+- ✅ `k3sp plan` annonce les actions d'installation
+- ✅ `k3sp apply` execute le plan complet via le runner transactionnel
+- ⬜ `k3sp verify` confirme service running, version attendue et node ready (Phase 8)
 
 Livrables :
 
-- `packages/k3sremote/src/k3sremote/actions.py` (InstallK3s, SystemdServiceEnable, SystemdServiceStart, WaitK3sNodeReady, FetchKubeconfig)
-- `packages/k3sremote/src/k3sremote/builder.py` (actions k3s cablees)
+- `packages/pilotremote/src/pilotremote/actions.py` (InstallK3s, SystemdServiceEnable, SystemdServiceStart, WaitK3sNodeReady, FetchKubeconfig)
+- `packages/pilotremote/src/pilotremote/builder.py` (actions k3s cablees)
 
 ## Phase 7 - k3s absent
 
@@ -252,8 +252,8 @@ Definition of done :
 
 Livrables :
 
-- `packages/k3sremote/src/k3sremote/actions.py` (UninstallK3s)
-- `packages/k3sremote/src/k3sremote/builder.py` (k3s.uninstall cable)
+- `packages/pilotremote/src/pilotremote/actions.py` (UninstallK3s)
+- `packages/pilotremote/src/pilotremote/builder.py` (k3s.uninstall cable)
 
 ## Phase 8 - Health et drift
 
@@ -263,8 +263,8 @@ Objectif : rendre l'outil utile au quotidien.
 
 Actions :
 
-- ✅ ajouter `k3sctl doctor <manifest>`
-- ✅ ajouter `k3sctl drift <manifest>`
+- ✅ ajouter `k3sp doctor <manifest>`
+- ✅ ajouter `k3sp drift <manifest>`
 - ✅ structurer les checks de sante
 - ✅ afficher un verdict clair : `healthy`, `degraded`, `unhealthy`
 
@@ -276,7 +276,7 @@ Definition of done :
 
 Livrables :
 
-- `packages/k3splan/src/k3splan/health.py`
+- `packages/pilotplan/src/pilotplan/health.py`
 
 ## Phase 9 - Durcissement
 
@@ -289,7 +289,7 @@ Actions :
 - ⬜ ajouter tests d'integration sur VM ou container systemd si possible
 - ✅ documenter les limites de rollback
 - ✅ documenter les risques d'upgrade k3s
-- ✅ ajouter mode `--dry-run` sur `k3sctl apply`
+- ✅ ajouter mode `--dry-run` sur `k3sp apply`
 - ✅ ajouter confirmations pour actions a risque eleve
 - ⬜ stabiliser le schema `v1alpha1`
 - ✅ documenter la separation manifeste public / inventaire prive
@@ -306,7 +306,7 @@ Definition of done :
 
 Statut : ⬜ `todo`
 
-Objectif : adapter l'experience `k3sctl` a trois usages distincts sans
+Objectif : adapter l'experience `k3sp` a trois usages distincts sans
 dupliquer le moteur declaratif.
 
 Modes cibles :
@@ -323,8 +323,8 @@ Actions :
 - ⬜ formaliser les contrats de sortie JSON pour `validate`, `inspect`, `plan`,
   `doctor` et `drift`
 - ⬜ documenter les codes de sortie CI
-- ⬜ ajouter un sous-ensemble `k3sctl ci ...` non interactif
-- ⬜ ajouter `k3sctl smart` avec contexte actif optionnel
+- ⬜ ajouter un sous-ensemble `k3sp ci ...` non interactif
+- ⬜ ajouter `k3sp smart` avec contexte actif optionnel
 - ⬜ creer un modele de suggestion avec commande equivalente, justification,
   risque et prerequis
 - ⬜ proposer `context set` quand aucun contexte actif n'est configure
@@ -348,18 +348,18 @@ dependre d'une commande SSH longue duree.
 
 Actions :
 
-- ✅ creer `agents/k3sagent` avec un module Go dedie
-- ✅ creer `proto/k3smetrics.proto` comme contrat source
+- ✅ creer `agents/pilotagent` avec un module Go dedie
+- ✅ creer `proto/pilotmetrics.proto` comme contrat source
 - ⬜ generer les stubs Go et Python depuis le contrat Protobuf
 - ⬜ implementer `StreamCpu` en gRPC dans l'agent Go
 - ⬜ faire ecouter l'agent sur `127.0.0.1` par defaut
-- ⬜ ajouter un client Python dans `k3sremote`
+- ⬜ ajouter un client Python dans `pilotremote`
 - ⬜ documenter le tunnel SSH vers l'agent
 - ✅ ajouter `go test ./...` et `go build` aux verifications du depot
 
 Definition of done :
 
 - ✅ un agent Go peut etre compile en binaire autonome
-- ⬜ `k3sctl` peut consommer le stream CPU via gRPC
+- ⬜ `k3sp` peut consommer le stream CPU via gRPC
 - ⬜ le flux fonctionne quand le seul acces reseau est SSH
 - ⬜ les contrats Protobuf sont versionnes et partages par Go et Python

@@ -29,8 +29,8 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version-file: agents/k3sagent/go.mod
-          cache-dependency-path: agents/k3sagent/go.mod
+          go-version-file: agents/pilotagent/go.mod
+          cache-dependency-path: agents/pilotagent/go.mod
 
       - name: Install dependencies
         run: uv sync --all-packages --dev --frozen
@@ -48,12 +48,12 @@ jobs:
         run: uv run pytest
 
       - name: Test Go agent
-        working-directory: agents/k3sagent
+        working-directory: agents/pilotagent
         run: go test ./...
 
       - name: Build Go agent
-        working-directory: agents/k3sagent
-        run: go build ./cmd/k3sagent
+        working-directory: agents/pilotagent
+        run: go build ./cmd/pilotagent
 
       - name: Build Go agent image
-        run: docker build -f agents/k3sagent/Dockerfile .
+        run: docker build -f agents/pilotagent/Dockerfile .

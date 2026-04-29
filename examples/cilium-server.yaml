@@ -1,4 +1,4 @@
-apiVersion: k3sctl.dev/v1alpha1
+apiVersion: k3s-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1

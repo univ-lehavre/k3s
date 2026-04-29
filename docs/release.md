@@ -14,15 +14,15 @@
 Le depot utilise une version unique synchronisee pour tous les paquets du
 monorepo :
 
-- `k3s-workspace`
-- `k3splan`
-- `k3sremote`
-- `k3scli`
+- `k3s-pilot`
+- `pilotplan`
+- `pilotremote`
+- `pilotcli`
 
 Les versions sont mises a jour ensemble par Commitizen.
 
-L'agent Go dans `agents/k3sagent` suit la meme version produit que les paquets
-Python tant qu'il reste pilote par `k3sctl`. Si l'agent devient un composant
+L'agent Go dans `agents/pilotagent` suit la meme version produit que les paquets
+Python tant qu'il reste pilote par `k3sp`. Si l'agent devient un composant
 autonome avec son propre cycle de release, la strategie de version devra etre
 separee explicitement.
 
@@ -77,11 +77,11 @@ uv run ruff format --check .
 uv run ruff check .
 uv run mypy packages
 uv run pytest
-cd agents/k3sagent
+cd agents/pilotagent
 go test ./...
-go build ./cmd/k3sagent
+go build ./cmd/pilotagent
 cd ../..
-docker build -f agents/k3sagent/Dockerfile .
+docker build -f agents/pilotagent/Dockerfile .
 ```
 
 ## Bump local
@@ -141,7 +141,7 @@ Le workflow :
 5. pousse le commit de bump et le tag vers `main` ;
 6. build les distributions avec
    `uv build --all-packages --out-dir dist --clear --no-create-gitignore` ;
-7. build l'agent Go dans `dist/k3sagent` ;
+7. build l'agent Go dans `dist/pilotagent` ;
 8. publie l'image de l'agent sur GitHub Packages via GHCR ;
 9. cree une GitHub Release avec les artefacts de `dist/`.
 
@@ -155,11 +155,11 @@ L'agent Go est publie sur GitHub Packages sous forme d'image OCI dans le GitHub
 Container Registry :
 
 ```text
-ghcr.io/<owner>/k3sagent:<version>
-ghcr.io/<owner>/k3sagent:latest
+ghcr.io/<owner>/pilotagent:<version>
+ghcr.io/<owner>/pilotagent:latest
 ```
 
 La GitHub Release contient aussi :
 
 - les wheels et sdists Python ;
-- le binaire Go `k3sagent`.
+- le binaire Go `pilotagent`.

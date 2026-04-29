@@ -1,6 +1,6 @@
 # Manifestes et inventaires
 
-Les manifestes k3sctl decrivent l'etat attendu d'une machine. Ils peuvent etre versionnes dans un depot public tant qu'ils ne contiennent pas d'informations de connexion reelles.
+Les manifestes k3sp decrivent l'etat attendu d'une machine. Ils peuvent etre versionnes dans un depot public tant qu'ils ne contiennent pas d'informations de connexion reelles.
 
 Les informations de connexion sont separees dans un inventaire local.
 
@@ -57,19 +57,19 @@ Fichiers locaux ignores :
 Valider uniquement le manifeste :
 
 ```bash
-uv run k3sctl validate examples/single-server.yaml
+uv run k3sp validate examples/single-server.yaml
 ```
 
 Valider le manifeste et la resolution de connexion :
 
 ```bash
-uv run k3sctl validate examples/single-server.yaml --inventory inventory.local.yaml
+uv run k3sp validate examples/single-server.yaml --inventory inventory.local.yaml
 ```
 
 Pour les exemples publics :
 
 ```bash
-uv run k3sctl validate examples/single-server.yaml --inventory examples/inventory.example.yaml
+uv run k3sp validate examples/single-server.yaml --inventory examples/inventory.example.yaml
 ```
 
 ## Regle de schema
@@ -87,7 +87,7 @@ mais il ne doit pas etre utilise dans les exemples publics.
 ## Manifest d'installation
 
 ```yaml
-apiVersion: k3sctl.dev/v1alpha1
+apiVersion: k3s-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
@@ -133,7 +133,7 @@ spec:
 ## Manifest de desinstallation
 
 ```yaml
-apiVersion: k3sctl.dev/v1alpha1
+apiVersion: k3s-pilot.dev/v1alpha1
 kind: Machine
 metadata:
   name: prod-1
