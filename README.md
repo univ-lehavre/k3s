@@ -20,7 +20,7 @@ agent distant pour les metriques continues.
 
 ## Documentation
 
-- [Instructions pour agents IA](AGENTS.md)
+- [Contribuer](CONTRIBUTING.md)
 - [Architecture](docs/architecture.md)
 - [Plan](docs/plan.md)
 - [Manifestes et inventaires](docs/manifest.md)
