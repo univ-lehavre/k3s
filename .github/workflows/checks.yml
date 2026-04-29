@@ -54,3 +54,6 @@ jobs:
       - name: Build Go agent
         working-directory: agents/k3sagent
         run: go build ./cmd/k3sagent
+
+      - name: Build Go agent image
+        run: docker build -f agents/k3sagent/Dockerfile .

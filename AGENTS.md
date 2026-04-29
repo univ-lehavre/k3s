@@ -28,8 +28,8 @@ desired state -> observed state -> plan -> action -> verify -> commit/rollback
 - `agents/k3sagent` : agent Go experimental pour les metriques continues.
 - `proto/k3smetrics.proto` : contrat Protobuf source pour les futurs flux gRPC.
 - `.github/workflows/checks.yml` : checks GitHub Actions.
-- `.github/workflows/release.yml` : bump, build, publication PyPI et GitHub
-  Release.
+- `.github/workflows/release.yml` : release automatique sur `main`, bump,
+  changelog, publication GHCR et GitHub Release.
 
 ## Regles de contribution
 
@@ -96,8 +96,10 @@ uv run pre-commit install --hook-type commit-msg
   `ruff format --check`, `ruff check`, `mypy packages` et `pytest`.
 - Les checks Go doivent rester alignes avec `go test ./...` et
   `go build ./cmd/k3sagent` depuis `agents/k3sagent`.
-- Le workflow de release doit rester manuel et ne doit pas stocker de token PyPI
-  dans le depot. Utiliser Trusted Publishing avec l'environnement GitHub `pypi`.
+- Le workflow de release se lance automatiquement sur `main` et ignore les
+  commits `chore(release):` pour eviter une boucle.
+- GitHub Packages ne supporte pas de registre PyPI. Publier l'agent Go comme
+  image GHCR et attacher les distributions Python a la GitHub Release.
 
 ## Connexions distantes
 
