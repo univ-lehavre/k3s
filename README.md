@@ -119,6 +119,11 @@ uv run cz bump --dry-run --yes
 uv run cz bump
 ```
 
+Les checks GitHub lancent format, lint, typage et tests sur les pull requests et
+sur `main`. La release se fait via le workflow manuel `Release`, qui bump la
+version avec Commitizen, build les distributions, publie sur PyPI et cree la
+GitHub Release.
+
 ## Documentation
 
 - [Instructions pour agents IA](AGENTS.md)

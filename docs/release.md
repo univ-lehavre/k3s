@@ -1,5 +1,16 @@
 # Release
 
+## Table des matieres
+
+- [Version](#version)
+- [Commits](#commits)
+- [Checks GitHub](#checks-github)
+- [Bump local](#bump-local)
+- [Release GitHub](#release-github)
+- [Publication PyPI](#publication-pypi)
+
+## Version
+
 Le depot utilise une version unique synchronisee pour tous les paquets du
 monorepo :
 
@@ -39,7 +50,24 @@ BREAKING: major
 Tant que le projet reste en `0.x`, `major_version_zero = true` limite les bumps
 majeurs automatiques.
 
-## Bump
+## Checks GitHub
+
+Le workflow `.github/workflows/checks.yml` s'execute sur :
+
+- les pull requests ;
+- les pushes vers `main`.
+
+Il lance :
+
+```bash
+uv sync --all-packages --dev --frozen
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy packages
+uv run pytest
+```
+
+## Bump local
 
 Verifier le depot :
 
@@ -67,3 +95,35 @@ Commitizen met a jour :
 - les versions des `pyproject.toml` ;
 - `CHANGELOG.md` ;
 - le tag Git `vX.Y.Z`.
+
+## Release GitHub
+
+Le workflow `.github/workflows/release.yml` est manuel via `workflow_dispatch`.
+Il doit etre lance depuis la branche `main`. Il accepte un input `bump` :
+
+- `auto` : laisse Commitizen determiner l'increment ;
+- `patch` ;
+- `minor` ;
+- `major`.
+
+Le workflow :
+
+1. installe l'environnement avec `uv` ;
+2. lance les checks complets ;
+3. execute `uv run cz bump --yes` ou `uv run cz bump --yes --increment <bump>` ;
+4. pousse le commit de bump et le tag vers `main` ;
+5. build les distributions avec
+   `uv build --all-packages --out-dir dist --clear --no-create-gitignore` ;
+6. publie les distributions sur PyPI ;
+7. cree une GitHub Release avec les artefacts de `dist/`.
+
+## Publication PyPI
+
+La publication utilise `pypa/gh-action-pypi-publish` avec Trusted Publishing.
+Le repository doit etre configure cote PyPI avec un publisher lie a :
+
+- owner/repository GitHub du projet ;
+- workflow `.github/workflows/release.yml` ;
+- environnement GitHub `pypi`.
+
+Aucun token PyPI ne doit etre stocke dans le depot.

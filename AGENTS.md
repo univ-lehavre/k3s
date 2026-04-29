@@ -25,6 +25,9 @@ desired state -> observed state -> plan -> action -> verify -> commit/rollback
 - `docs/plan.md` : phasage du projet.
 - `docs/manifest.md` : manifestes et inventaires.
 - `docs/release.md` : versionnement et release.
+- `.github/workflows/checks.yml` : checks GitHub Actions.
+- `.github/workflows/release.yml` : bump, build, publication PyPI et GitHub
+  Release.
 
 Une extension future prevoit un agent Go dans `agents/k3sagent` avec contrats
 Protobuf dans `proto/`. Cet outillage n'existe pas encore.
@@ -88,6 +91,10 @@ uv run pre-commit install --hook-type commit-msg
   detache.
 - Le hook `commit-msg` refuse les messages contenant une adresse courriel avant
   la verification Commitizen.
+- Les checks GitHub doivent rester alignes avec les commandes locales :
+  `ruff format --check`, `ruff check`, `mypy packages` et `pytest`.
+- Le workflow de release doit rester manuel et ne doit pas stocker de token PyPI
+  dans le depot. Utiliser Trusted Publishing avec l'environnement GitHub `pypi`.
 
 ## Connexions distantes
 
